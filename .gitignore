@@ -1,0 +1,4 @@
+/vendor/
+/logs/
+/www/bower_components/
+config_local.php

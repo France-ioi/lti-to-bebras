@@ -1,0 +1,22 @@
+{
+  "name": "france-ioi/lti-to-bebras",
+  "homepage": "https://github.com/France-ioi/lti-to-bebras",
+  "authors": [
+    "France-ioi <info@france-ioi.org>"
+  ],
+  "description": "LTI to Bebras API wrapper",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "pem-platform": "France-ioi/pem-platform#^2.8.0"
+  }
+}

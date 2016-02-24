@@ -1,0 +1,23 @@
+{
+    "name": "france-ioi/lti-to-bebras",
+    "description": "LTI to Bebras API wrapper",
+    "license": "MIT",
+    "repositories": [{
+       "type": "vcs",
+       "url": "http://github.com/France-ioi/lti"
+    }],
+    "authors": [
+        {
+            "name": "France-ioi",
+            "email": "info@france-ioi.org"
+        }
+    ],
+    "require": {
+        "France-ioi/lti": "*@dev",
+        "zendframework/zend-diactoros": "^1.3",
+        "phpseclib/phpseclib": "*",
+        "php": ">=5.4.0",
+        "lib-openssl": "*",
+        "lib-curl": "*"
+    }
+}
