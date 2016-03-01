@@ -10,8 +10,6 @@ ini_set('session.gc_maxlifetime', 3000);
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 
-
-
 function connect_pdo($config) {
    // computing timezone difference with gmt:
    // http://www.sitepoint.com/synchronize-php-mysql-timezone-configuration/
@@ -25,11 +23,11 @@ function connect_pdo($config) {
    try {
       $pdo_options[PDO::ATTR_ERRMODE] = PDO::ERRMODE_EXCEPTION;
       $pdo_options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES utf8";
-      $connexionString = "mysql:host=".$config->db->mysql->host.";dbname=".$config->db->mysql->database.";charset=utf8";
-      if ($config->db->mysql->logged) {
-         $db = new LoggedPDO($connexionString, $config->db->mysql->user, $config->db->mysql->password, $pdo_options);
+      $connexionString = "mysql:host=".$config->db->host.";dbname=".$config->db->database.";charset=utf8";
+      if ($config->db->logged) {
+         $db = new LoggedPDO($connexionString, $config->db->user, $config->db->password, $pdo_options);
       } else {
-         $db = new PDO($connexionString, $config->db->mysql->user, $config->db->mysql->password, $pdo_options);
+         $db = new PDO($connexionString, $config->db->user, $config->db->password, $pdo_options);
       }
       $db->exec("SET time_zone='".$offset."';");
    } catch (Exception $e) {
@@ -37,3 +35,5 @@ function connect_pdo($config) {
    }
    return $db;
 }
+
+$db = connect_pdo($config);

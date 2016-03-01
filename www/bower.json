@@ -17,6 +17,7 @@
     "tests"
   ],
   "dependencies": {
-    "pem-platform": "France-ioi/pem-platform#^2.8.0"
+    "pem-platform": "France-ioi/pem-platform#^2.8.0",
+    "bootstrap": "^3.3.6"
   }
 }

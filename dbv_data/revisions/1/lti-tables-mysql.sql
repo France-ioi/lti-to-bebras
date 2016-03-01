@@ -66,9 +66,9 @@ ALTER TABLE lti_context
   ADD CONSTRAINT lti_context_context_FK1 FOREIGN KEY (primary_consumer_key, primary_context_id)
 	 REFERENCES lti_context (consumer_key, context_id);
 
-ALTER TABLE lti_user
-  ADD CONSTRAINT lti_user_context_FK1 FOREIGN KEY (consumer_key, context_id)
-	 REFERENCES lti_context (consumer_key, context_id);
+-- ALTER TABLE lti_user
+--   ADD CONSTRAINT lti_user_context_FK1 FOREIGN KEY (consumer_key, context_id)
+-- 	 REFERENCES lti_context (consumer_key, context_id);
 
 ALTER TABLE lti_nonce
 	ADD CONSTRAINT lti_nonce_consumer_FK1 FOREIGN KEY (consumer_key)
