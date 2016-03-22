@@ -20,9 +20,10 @@ function platformLoad(task,platform,metaData) {
       }
    };
    platform.askHint = function(hintToken, success, error) {
-      $.post('api-entry.php', JSON.stringify({taskPlatformName: taskPlatformName, action: 'askHint', hintToken: hintToken}), function(postRes){
+      $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'askHint', hintToken: hintToken}, function(postRes){
          if (postRes.success && postRes.token) {
          	task.updateToken(token, function() {
+               token = postRes.token;
          		success();
          	}, error);
          } else {
@@ -32,16 +33,21 @@ function platformLoad(task,platform,metaData) {
    };
    function gradeCurrentAnswer(success,error) {
 		task.getAnswer(function (answer) {
-         task.gradeAnswer(answer, postRes.sAnswerToken, function(score,message,scoreToken) {
-         	$.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'graderReturn', score: score, message: message, scoreToken: scoreToken}, {responseType: 'json'}).success(function(postRes) {
-         		if (postRes.success) {
-         			success();	
-         		} else {
-         			error('something went wrong with api-entry.php: '+postRes.error);
-         		}
-            }, 'json').fail(error);
-
-         }, error);
+         $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'getAnswerToken', sToken: token, sAnswer: answer}, function(postRes){
+            if (postRes.success && postRes.token) {
+               task.gradeAnswer(answer, postRes.sAnswerToken, function(score,message,scoreToken) {
+                  $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'graderReturn', score: score, message: message, scoreToken: scoreToken}, {responseType: 'json'}).success(function(postRes) {
+                     if (postRes.success) {
+                        success();
+                     } else {
+                        error('something went wrong with api-entry.php: '+postRes.error);
+                     }
+                  }, 'json').fail(error);
+               }, error);
+            } else {
+               error('error in api-entry.php: '+postRes.error);
+            }
+         }, 'json').fail(error);
       }, error);
    }
 	platform.validate = function(mode, success, error) {

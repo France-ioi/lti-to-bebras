@@ -19,6 +19,10 @@
         "php": ">=5.4.0",
         "lib-openssl": "*",
         "lib-curl": "*",
-        "spomky-labs/jose": "2.0.*@beta"
+        "spomky-labs/jose": "2.0.*@beta",
+        "djchen/oauth1-php" : "dev-master"
+    },
+    "autoload": {
+        "psr-0": {"": "src/"}
     }
 }

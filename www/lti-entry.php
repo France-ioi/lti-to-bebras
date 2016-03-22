@@ -21,7 +21,7 @@ if (!$taskPlatformName) {
 	echo "Vous devez spécifier un taskPlatformName!";
 }
 
-function saveUser($user, $returnUrl) {
+function saveUser($user, $returnUrl, $sourcedId) {
 	global $db;
 	$firstName = $user->firstName;
 	$lastName = $user->lastName;
@@ -30,7 +30,7 @@ function saveUser($user, $returnUrl) {
 	$lti_context_id = $user->getResourceLink()->lti_context_id;
 	$lti_consumer_key = $user->getResourceLink()->getConsumer()->getKey();
 	// TODO: update name if different?
-	$stmt = $db->prepare('insert ignore into api_users (lti_context_id, lti_consumer_key, lti_user_id, firstName, lastName, email, lis_return_url) values (:lticontextid, :lticonsumerkey, :ltiuserid, :firstName, :lastName, :email, :returnUrl);');
+	$stmt = $db->prepare('insert ignore into api_users (lti_context_id, lti_consumer_key, lti_user_id, firstName, lastName, email, lis_return_url, lis_result_sourcedid) values (:lticontextid, :lticonsumerkey, :ltiuserid, :firstName, :lastName, :email, :returnUrl, :sourcedId);');
 	$stmt->execute([
 		'lticontextid' => $lti_context_id,
 		'lticonsumerkey' => $lti_consumer_key,
@@ -39,6 +39,7 @@ function saveUser($user, $returnUrl) {
 		'lastName' => $lastName,
 		'email' => $email,
 		'returnUrl' => $returnUrl,
+		'sourcedId' => $sourcedId,
 	]);
 	$stmt = $db->prepare('select ID from api_users where lti_context_id = :lticontextid and lti_consumer_key = :lticonsumerkey and lti_user_id = :ltiuserid;');
 	$stmt->execute([
@@ -49,9 +50,9 @@ function saveUser($user, $returnUrl) {
 	return $stmt->fetchColumn();
 }
 
-function handleLtiResources($user, $returnUrl) {
+function handleLtiResources($user, $returnUrl, $sourcedId) {
 	global $taskId, $taskPlatformName;
-	$userId = saveUser($user, $returnUrl);
+	$userId = saveUser($user, $returnUrl, $sourcedId);
 	if (!$userId) {
 		die('impossible d\'enegistrer l\'utilisateur');
 	}
@@ -74,7 +75,7 @@ function handleLtiResources($user, $returnUrl) {
 // actual lti handling:
 class MyToolProvider extends Franzl\Lti\ToolProvider {
   	function onLaunch() {
- 	 	handleLtiResources($this->user, $this->returnUrl);
+ 	 	handleLtiResources($this->user, $this->user->getResourceLink()->settings['lis_outcome_service_url'], $this->user->getResourceLink()->settings['lis_result_sourcedid']);
   	}
 }
 

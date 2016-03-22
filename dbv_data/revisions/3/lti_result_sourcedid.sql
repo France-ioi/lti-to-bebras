@@ -1,0 +1,1 @@
+ALTER TABLE `api_users` ADD `lis_result_sourcedid` VARCHAR(255) NULL DEFAULT NULL ;
