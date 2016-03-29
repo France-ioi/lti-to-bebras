@@ -13,14 +13,12 @@
         }
     ],
     "require": {
-        "France-ioi/lti": "*@dev",
         "zendframework/zend-diactoros": "^1.3",
         "phpseclib/phpseclib": "*",
         "php": ">=5.4.0",
         "lib-openssl": "*",
         "lib-curl": "*",
-        "spomky-labs/jose": "2.0.*@beta",
-        "djchen/oauth1-php" : "dev-master"
+        "spomky-labs/jose": "2.0.*@beta"
     },
     "autoload": {
         "psr-0": {"": "src/"}
