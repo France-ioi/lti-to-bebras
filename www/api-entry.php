@@ -60,37 +60,32 @@ function askHint($hintToken, $taskPlatformName) {
 }
 
 function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
+	global $db;
 	$params = getTaskTokenParams($taskPlatformName, $token);
 	if (!isset($params['score']) || !isset($params['sAnswer']))  {
 		die(json_encode(['success' => false, 'error' => 'no "score" or "sAnswer" field in hint token']));
 	}
 	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\' where idUser = :idUser and idTask = :idTask and sAnswer = :sAnswer;');
 	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'idItem' => $params['idItem'], 'score' => $params['score'], 'message' => $message]);
-	$stmt = $db->prepare('select api_users.lis_return_url, api_users.lis_result_sourcedid, lti_consumer.secret, api_users.lti_consumer_key from lti_consumer join api_users on api_users.lti_consumer_key = lti_consumer.consumer_key where api_users.ID = :userId;');
-	$stmt->execute(['idUser' => $params['idUser']]);
+	sendLISResult($params['idUser'], $score);
+}
+
+function sendLSIResult($userId, $score) {
+	global $db;
+	$stmt = $db->prepare('select lti_user.user_id, api_users.lti_consumer_key, lti_context.lti_resource_id, lti_user.lti_result_sourcedid from lti_context join api_users on api_users.lti_consumer_key = lti_context.consumer_key and api_users.lti_context_id = lti_context.lti_context_id join lti_user on api_users.lti_consumer_key = lti_user.consumer_key and api_users.lti_user_id = lti_user.user_id and lti_user.context_id = lti_context.context_id where api_users.ID = :userId;');
+	$stmt->execute(['idUser' => $userId]);
 	$LISInfos = $stmt->fetch();
 	if (!$LISInfos) {
 		die(json_encode(['success' => false, 'error' => 'impossible to find consumer data for user '.$params['idUser']]));
 	}
-	sendLISResult($LISInfos['lis_return_url'], $LISInfos['lis_result_sourcedid'], $score, $LISInfos['secret'], $LISInfos['lti_consumer_key']);
-}
-
-function sendLSIResult($url, $sourcedId, $score, $secret, $key) {
-	$messageId = mt_rand(100000000,999999999);
-	$message = '<?xml version = "1.0" encoding = "UTF-8"?><imsx_POXEnvelopeRequest xmlns = "http://www.imsglobal.org/services/ltiv1p1/xsd/imsoms_v1p0"><imsx_POXHeader><imsx_POXRequestHeaderInfo><imsx_version>V1.0</imsx_version><imsx_messageIdentifier>'.$messageId.'</imsx_messageIdentifier></imsx_POXRequestHeaderInfo></imsx_POXHeader><imsx_POXBody><replaceResultRequest><resultRecord><sourcedGUID><sourcedId>'.
-	$sourcedId.'</sourcedId></sourcedGUID><result><resultScore><language>en</language><textString>'.$score.'</textString></resultScore></result></resultRecord></replaceResultRequest></imsx_POXBody></imsx_POXEnvelopeRequest>';
-		$oauth = new OAuth1(array(
-	    'consumerKey' => $key,
-	    'consumerSecret' => $secret,
-	    'requestTokenUrl' => $url,
-	    'accessTokenUrl' => $url,
-	));
-	$response = $oauth->post($url, $message);
-	$parsedResponse = new SimpleXMLElement($response->body);
-	$statusInfo = $parsedResponse->imsx_POXHeader->imsx_POXResponseHeaderInfo->imsx_statusInfo;
-	if ($statusInfo->imsx_codeMajor == 'failure') {	
-		error_log('lsi failed: '.$statusInfo->asXML());
-	}
+	$settings = json_decode($LISInfos['settings'], true);
+	$dbConn = LTI_Data_Connector::getDataConnector($db, 'PDO');
+	$consumer = new LTI_Tool_Consumer($LTIInfos['key'], $dbConn);
+	$resourceLink = new LTI_Resource_Link($consumer,$LTIInfos['lti_resource_id']);
+	$outcome = new LTI_Outcome();
+	$outcome->setValue($score);
+	$user = new LTI_User($resourceLink, $LTIInfos['user_id']);
+	$ok = $resourceLink->doOutcomesService(LTI_Resource_Link::EXT_WRITE, $outcome, $user);
 }
 
 function getAnswerToken($token, $taskPlatformName, $answer) {

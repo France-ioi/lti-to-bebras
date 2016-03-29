@@ -1,15 +1,12 @@
 <?php
 
-use Franzl\Lti;
-use Zend\Diactoros\ServerRequest;
-use Zend\Diactoros\ServerRequestFactory;
-
 /* This file parses an lti call and produces a bebras API token */
 
 require_once __DIR__.'/../vendor/autoload.php';
 require_once __DIR__.'/../shared/connect.php';
 require_once __DIR__.'/../shared/TokenGenerator.php';
 require_once __DIR__.'/../shared/common.php';
+require_once 'LTI_Tool_Provider.php';
 
 $taskId = isset($_GET['taskId']) ? $_GET['taskId'] : null;
 if (!$taskId) {
@@ -23,14 +20,17 @@ if (!$taskPlatformName) {
 
 function saveUser($user, $returnUrl, $sourcedId) {
 	global $db;
-	$firstName = $user->firstName;
-	$lastName = $user->lastName;
+	//$firstName = $user->firstName;
+	//$lastName = $user->lastName;
+	// TODO
+	$firstName = '';
+	$lastName = '';
 	$email = $user->email;
 	$lti_user_id = $user->getId();
 	$lti_context_id = $user->getResourceLink()->lti_context_id;
 	$lti_consumer_key = $user->getResourceLink()->getConsumer()->getKey();
 	// TODO: update name if different?
-	$stmt = $db->prepare('insert ignore into api_users (lti_context_id, lti_consumer_key, lti_user_id, firstName, lastName, email, lis_return_url, lis_result_sourcedid) values (:lticontextid, :lticonsumerkey, :ltiuserid, :firstName, :lastName, :email, :returnUrl, :sourcedId);');
+	$stmt = $db->prepare('insert ignore into api_users (lti_context_id, lti_consumer_key, lti_user_id, firstName, lastName, email) values (:lticontextid, :lticonsumerkey, :ltiuserid, :firstName, :lastName, :email);');
 	$stmt->execute([
 		'lticontextid' => $lti_context_id,
 		'lticonsumerkey' => $lti_consumer_key,
@@ -38,8 +38,6 @@ function saveUser($user, $returnUrl, $sourcedId) {
 		'firstName' => $firstName,
 		'lastName' => $lastName,
 		'email' => $email,
-		'returnUrl' => $returnUrl,
-		'sourcedId' => $sourcedId,
 	]);
 	$stmt = $db->prepare('select ID from api_users where lti_context_id = :lticontextid and lti_consumer_key = :lticonsumerkey and lti_user_id = :ltiuserid;');
 	$stmt->execute([
@@ -50,9 +48,9 @@ function saveUser($user, $returnUrl, $sourcedId) {
 	return $stmt->fetchColumn();
 }
 
-function handleLtiResources($user, $returnUrl, $sourcedId) {
+function handleLtiResources($user) {
 	global $taskId, $taskPlatformName;
-	$userId = saveUser($user, $returnUrl, $sourcedId);
+	$userId = saveUser($user);
 	if (!$userId) {
 		die('impossible d\'enegistrer l\'utilisateur');
 	}
@@ -73,17 +71,15 @@ function handleLtiResources($user, $returnUrl, $sourcedId) {
 }
 
 // actual lti handling:
-class MyToolProvider extends Franzl\Lti\ToolProvider {
+class MyToolProvider extends LTI_Tool_Provider {
   	function onLaunch() {
- 	 	handleLtiResources($this->user, $this->user->getResourceLink()->settings['lis_outcome_service_url'], $this->user->getResourceLink()->settings['lis_result_sourcedid']);
+ 	 	handleLtiResources($this->user);
   	}
 }
 
-$dbConn = Franzl\Lti\Storage\AbstractStorage::getStorage($db, 'PDO');
-// create a PsrServerRequest throught Zend\Diactoros
-$request = ServerRequestFactory::fromGlobals($_SERVER, [], $_POST, $_COOKIE, $_FILES);
+$dbConn = LTI_Data_Connector::getDataConnector($db, 'PDO');
 $tool = new MyToolProvider($dbConn);
-$tool->handleRequest($request);
+$tool->execute();
 
 function printPage($token, $taskPlatformUrl, $platformName, $taskPlatformName) {
 	global $config;
