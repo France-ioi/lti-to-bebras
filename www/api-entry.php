@@ -5,6 +5,7 @@ require_once __DIR__.'/../shared/connect.php';
 require_once __DIR__.'/../shared/TokenGenerator.php';
 require_once __DIR__.'/../shared/TokenParser.php';
 require_once __DIR__.'/../shared/common.php';
+require_once 'LTI_Tool_Provider.php';
 
 // askValidation(token,answer) return token (graderToken)
 // askHint(token) -> return token
@@ -61,30 +62,29 @@ function askHint($hintToken, $taskPlatformName) {
 
 function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
 	global $db;
-	$params = getTaskTokenParams($taskPlatformName, $token);
+	$params = getTaskTokenParams($taskPlatformName, $scoreToken);
 	if (!isset($params['score']) || !isset($params['sAnswer']))  {
 		die(json_encode(['success' => false, 'error' => 'no "score" or "sAnswer" field in hint token']));
 	}
-	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\' where idUser = :idUser and idTask = :idTask and sAnswer = :sAnswer;');
+	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\' where idUser = :idUser and sTaskTextId = :idItem and sAnswer = :sAnswer;');
 	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'idItem' => $params['idItem'], 'score' => $params['score'], 'message' => $message]);
 	sendLISResult($params['idUser'], $score);
 }
 
-function sendLSIResult($userId, $score) {
+function sendLISResult($userId, $score) {
 	global $db;
-	$stmt = $db->prepare('select lti_user.user_id, api_users.lti_consumer_key, lti_context.lti_resource_id, lti_user.lti_result_sourcedid from lti_context join api_users on api_users.lti_consumer_key = lti_context.consumer_key and api_users.lti_context_id = lti_context.lti_context_id join lti_user on api_users.lti_consumer_key = lti_user.consumer_key and api_users.lti_user_id = lti_user.user_id and lti_user.context_id = lti_context.context_id where api_users.ID = :userId;');
+	$stmt = $db->prepare('select lti_user.user_id, api_users.lti_consumer_key, lti_context.lti_resource_id, lti_user.lti_result_sourcedid from lti_context join api_users on api_users.lti_consumer_key = lti_context.consumer_key and api_users.lti_context_id = lti_context.lti_context_id join lti_user on api_users.lti_consumer_key = lti_user.consumer_key and api_users.lti_user_id = lti_user.user_id and lti_user.context_id = lti_context.context_id where api_users.ID = :idUser;');
 	$stmt->execute(['idUser' => $userId]);
 	$LISInfos = $stmt->fetch();
 	if (!$LISInfos) {
 		die(json_encode(['success' => false, 'error' => 'impossible to find consumer data for user '.$params['idUser']]));
 	}
-	$settings = json_decode($LISInfos['settings'], true);
 	$dbConn = LTI_Data_Connector::getDataConnector($db, 'PDO');
-	$consumer = new LTI_Tool_Consumer($LTIInfos['key'], $dbConn);
-	$resourceLink = new LTI_Resource_Link($consumer,$LTIInfos['lti_resource_id']);
+	$consumer = new LTI_Tool_Consumer($LISInfos['lti_consumer_key'], $dbConn);
+	$resourceLink = new LTI_Resource_Link($consumer,$LISInfos['lti_resource_id']);
 	$outcome = new LTI_Outcome();
 	$outcome->setValue($score);
-	$user = new LTI_User($resourceLink, $LTIInfos['user_id']);
+	$user = new LTI_User($resourceLink, $LISInfos['user_id']);
 	$ok = $resourceLink->doOutcomesService(LTI_Resource_Link::EXT_WRITE, $outcome, $user);
 }
 

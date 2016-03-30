@@ -18,7 +18,7 @@ if (!$taskPlatformName) {
 	echo "Vous devez spécifier un taskPlatformName!";
 }
 
-function saveUser($user, $returnUrl, $sourcedId) {
+function saveUser($user) {
 	global $db;
 	//$firstName = $user->firstName;
 	//$lastName = $user->lastName;
