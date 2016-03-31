@@ -3423,7 +3423,7 @@ class LTI_HTTP_Message {
       curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
       curl_setopt($ch, CURLINFO_HEADER_OUT, TRUE);
       curl_setopt($ch, CURLOPT_HEADER, TRUE);
-      curl_setopt($ch, CURLOPT_SSLVERSION,3);
+      curl_setopt($ch, CURLOPT_SSLVERSION,4);
       $ch_resp = curl_exec($ch);
       $ok = $ch_resp !== FALSE;
       if ($ok) {
