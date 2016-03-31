@@ -1,7 +1,10 @@
 function platformLoad(task,platform,metaData) {
 	console.error(platform);
 	platform.openUrl = function(sTextId, success, error) {success();};
-	platform.updateHeight = function(height,success,error) {success();};
+	platform.updateHeight = function(height,success,error) {
+      $('#taskIframe').height(height);
+      success();
+   };
 	platform.getTaskParams = function(key, defaultValue, success, error) {
       var res = {'minScore': 0, 'maxScore': 100, 'noScore': 0, 'readOnly': false, 'randomSeed': 0, 'options': {}, returnUrl: returnUrl};
       if (key) {
@@ -35,7 +38,7 @@ function platformLoad(task,platform,metaData) {
 		task.getAnswer(function (answer) {
          $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'getAnswerToken', sToken: token, sAnswer: answer}, function(postRes){
             if (postRes.success && postRes.token) {
-               task.gradeAnswer(answer, postRes.sAnswerToken, function(score,message,scoreToken) {
+               task.gradeAnswer(answer, postRes.token, function(score,message,scoreToken) {
                   $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'graderReturn', score: score, message: message, scoreToken: scoreToken}, {responseType: 'json'}).success(function(postRes) {
                      if (postRes.success) {
                         success();

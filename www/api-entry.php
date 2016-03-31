@@ -7,6 +7,8 @@ require_once __DIR__.'/../shared/TokenParser.php';
 require_once __DIR__.'/../shared/common.php';
 require_once 'LTI_Tool_Provider.php';
 
+header('Content-Type: application/json');
+
 // askValidation(token,answer) return token (graderToken)
 // askHint(token) -> return token
 // graderReturn(score,message,scoreToken) -> rien
@@ -83,9 +85,11 @@ function sendLISResult($userId, $score) {
 	$consumer = new LTI_Tool_Consumer($LISInfos['lti_consumer_key'], $dbConn);
 	$resourceLink = new LTI_Resource_Link($consumer,$LISInfos['lti_resource_id']);
 	$outcome = new LTI_Outcome();
-	$outcome->setValue($score);
+	$scoreOnOne = $score / 100;
+	$outcome->setValue($scoreOnOne);
 	$user = new LTI_User($resourceLink, $LISInfos['user_id']);
 	$ok = $resourceLink->doOutcomesService(LTI_Resource_Link::EXT_WRITE, $outcome, $user);
+	echo json_encode(['success' => true]);
 }
 
 function getAnswerToken($token, $taskPlatformName, $answer) {

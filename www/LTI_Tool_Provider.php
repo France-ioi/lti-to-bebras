@@ -189,7 +189,7 @@ class LTI_Tool_Provider {
 /**
  *  @var boolean Whether debug messages explaining the cause of errors are to be returned to the tool consumer.
  */
-  protected $debugMode = FALSE;
+  public $debugMode = FALSE;
 
 /**
  *  @var array Callback functions for handling requests.
@@ -3439,6 +3439,8 @@ class LTI_HTTP_Message {
         if (!$ok) {
           $this->error = curl_error($ch);
         }
+      } else {
+        $resp = -1;
       }
       $this->request_headers = str_replace("\r\n", "\n", curl_getinfo($ch, CURLINFO_HEADER_OUT));
       curl_close($ch);
