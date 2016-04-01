@@ -5,6 +5,11 @@ function platformLoad(task,platform,metaData) {
       $('#taskIframe').height(height);
       success();
    };
+   var getHeightInterval = window.setInterval(function() {
+      task.getHeight(function(height) {
+         $('#taskIframe').height(height);
+      });
+   }, 1000);
 	platform.getTaskParams = function(key, defaultValue, success, error) {
       var res = {'minScore': 0, 'maxScore': 100, 'noScore': 0, 'readOnly': false, 'randomSeed': 0, 'options': {}, returnUrl: returnUrl};
       if (key) {
