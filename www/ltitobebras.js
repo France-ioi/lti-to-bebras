@@ -79,7 +79,6 @@ function platformLoad(task,platform,metaData) {
    };
    var frenchName = {
       'task': 'Exercice',
-      'submission': 'Soumission',
       'solution': 'Solution',
       'editor': 'Résoudre',
       'hints': 'Conseils'
@@ -89,7 +88,7 @@ function platformLoad(task,platform,metaData) {
          $("#choose-view").html("");
          for (var viewName in views)
          {
-            if (!views[viewName].requires) {
+            if (!views[viewName].requires && frenchName[viewName]) {
                $("#choose-view").append($('<button id="choose-view-'+viewName+'" class="btn btn-default choose-view-button">' + frenchName[viewName] + '</button>').click(showViewsHandlerFactory(viewName)));
             }
          }
