@@ -81,6 +81,8 @@ $dbConn = LTI_Data_Connector::getDataConnector($db, 'PDO');
 $tool = new MyToolProvider($dbConn);
 $tool->execute();
 
+// TODO: getLastAnswer, getLastState, synchronise state
+
 function printPage($token, $taskPlatformUrl, $platformName, $taskPlatformName) {
 	global $config;
 ?>

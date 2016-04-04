@@ -51,14 +51,14 @@ function askHint($hintToken, $taskPlatformName) {
 	if (!$params['askedHint']) {
 		die(json_encode(['success' => false, 'error' => 'no "askedHint" field in hint token']));
 	}
-	$stmt = $db->prepare('update api_users_tasks set nbHintsGiven = :askedHint where idUser = :idUser and idTask = :idTask;');
+	$stmt = $db->prepare('update api_users_tasks set nbHintsGiven = :askedHint where idUser = :idUser and sTaskTextId = :idTask;');
 	$stmt->execute(['askedHint' => $params['askedHint'], 'idUser' => $params['idUser'], 'idTask' => $params['idItem']]);
 	$platformData = getUserPlatformData($params['idUser']);
 	if (!$platformData) {
 		die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));
 	}
-	$userTask = getUserTask($params['idTask'], $params['idUser']);
-	$token = generateToken($params['idUser'], $userTask, $platformData, $params['idTask']);
+	$userTask = getUserTask($params['idItem'], $params['idUser']);
+	$token = generateToken($params['idUser'], $userTask, $platformData, $params['idItem']);
 	echo json_encode(['success' => true, 'token' => $token]);
 }
 
