@@ -49,7 +49,7 @@ function saveUser($user) {
 }
 
 function handleLtiResources($user) {
-	global $taskId, $taskPlatformName;
+	global $taskId, $taskPlatformName, $db;
 	$userId = saveUser($user);
 	if (!$userId) {
 		die('impossible d\'enegistrer l\'utilisateur');
@@ -59,15 +59,22 @@ function handleLtiResources($user) {
 	if (!$platformData) {
 		die('impossible de trouver la plateforme correspondante');
 	}
-	$token = generateToken($userId, $userTask, $platformData, $taskId);
-	if (!$token) {
-		die('impossible de générer le token');
-	}
 	$taskPlatform = getTaskPlatform($taskPlatformName);
 	if (!$taskPlatform) {
 		die('impossible de trouver la platforme d\'exercices');
 	}
-	printPage($token, $taskPlatform['url'], $platformData['name'], $taskPlatform['name']);
+	$token = generateToken($userId, $userTask, $platformData, $taskId);
+	if (!$token) {
+		die('impossible de générer le token');
+	}
+	$stmt = $db->prepare('select sAnswer from api_submissions where idUser = :idUser and sTaskTextId = :idTask order by sDate desc limit 1;');
+	$stmt->execute(['idUser' => $userId, 'idTask' => $taskId]);
+	$lastAnswer = $stmt->fetchColumn();
+	$url = $taskPlatform['url'];
+	if ($taskPlatform['bAppendIdToUrl']) {
+		$url = $url.$taskId;
+	}
+	printPage($token, $url, $platformData['name'], $taskPlatform['name'], $taskPlatform['bUsesTokens'], $userTask, $lastAnswer);
 }
 
 // actual lti handling:
@@ -83,8 +90,12 @@ $tool->execute();
 
 // TODO: getLastAnswer, getLastState, synchronise state
 
-function printPage($token, $taskPlatformUrl, $platformName, $taskPlatformName) {
+function printPage($token, $taskPlatformUrl, $platformName, $taskPlatformName, $bUsesTokens, $userTask, $lastAnswer) {
 	global $config;
+	$state = ($userTask && isset($userTask['sState'])) ? $userTask['sState'] : '';
+	$state = $state ? $state : '';
+	$lastAnswer = $lastAnswer ? : '';
+	$returnUrl = $config->baseUrl . '/api-entry.php';
 ?>
 
 <!DOCTYPE html>
@@ -103,13 +114,16 @@ function printPage($token, $taskPlatformUrl, $platformName, $taskPlatformName) {
     	var token = '<?= $token ?>';
     	var taskPlatformUrl = '<?= $taskPlatformUrl; ?>';
     	var platformName = '<?= $platformName; ?>';
+    	var lastAnswer = '<?= $lastAnswer; ?>';
+    	var lastState = '<?= $state ?>';
     	var taskPlatformName = '<?= $taskPlatformName; ?>';
-    	var returnUrl = '<?= $config->baseUrl; ?>/api.php?taskPlatformName=<?= $taskPlatformName; ?>'; // urlencode
+    	var usesTokens = <?= $bUsesTokens ?>;
+    	var returnUrl = '<? $returnUrl ?>';
     </script>
     </head>
     <body>
     <div id="choose-view"></div>
-    <iframe style="width:800px;height:800px;" id="taskIframe" src="<?= $taskPlatformUrl; ?>?sToken=<?= $token ?>&sPlatform=<?= $platformName ?>&channelId=<?= $taskPlatformUrl; ?>"></iframe>
+    <iframe style="width:800px;height:800px;" id="taskIframe" src="<?= $taskPlatformUrl; ?>?sToken=<?= $token ?>&sPlatform=<?= $platformName ?>&channelId=<?= $taskPlatformName; ?>"></iframe>
     </body>
     </html>
 <?php

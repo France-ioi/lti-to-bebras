@@ -10,6 +10,19 @@ function platformLoad(task,platform,metaData) {
          $('#taskIframe').height(height);
       });
    }, 1000);
+   var syncStateInterval = window.setInterval(function() {
+      task.getState(function(state) {
+         if (state == lastState) {
+            return;
+         }
+         $.post('api-entry.php', {platformName: platformName, action: 'saveState', sToken: token, sState: state}, function(res) {
+            if (!res.success) {
+               console.error('error in saving state');
+               return;
+            }
+         }, 'json').fail(console.error);
+      });
+   }, 3000);
 	platform.getTaskParams = function(key, defaultValue, success, error) {
       var res = {'minScore': 0, 'maxScore': 100, 'noScore': 0, 'readOnly': false, 'randomSeed': 0, 'options': {}, returnUrl: returnUrl};
       if (key) {
@@ -28,6 +41,10 @@ function platformLoad(task,platform,metaData) {
       }
    };
    platform.askHint = function(hintToken, success, error) {
+      if (!usesTokens) {
+         success();
+         return;
+      }
       $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'askHint', hintToken: hintToken}, function(postRes){
          if (postRes.success && postRes.token) {
          	task.updateToken(token, function() {
@@ -39,24 +56,39 @@ function platformLoad(task,platform,metaData) {
          }
       }, 'json').fail(error);
    };
+
    function gradeCurrentAnswer(success,error) {
-		task.getAnswer(function (answer) {
-         $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'getAnswerToken', sToken: token, sAnswer: answer}, function(postRes){
-            if (postRes.success && postRes.token) {
-               task.gradeAnswer(answer, postRes.token, function(score,message,scoreToken) {
-                  $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'graderReturn', score: score, message: message, scoreToken: scoreToken}, {responseType: 'json'}).success(function(postRes) {
-                     if (postRes.success) {
-                        success();
-                     } else {
-                        error('something went wrong with api-entry.php: '+postRes.error);
-                     }
-                  }, 'json').fail(error);
-               }, error);
-            } else {
-               error('error in api-entry.php: '+postRes.error);
-            }
-         }, 'json').fail(error);
-      }, error);
+      if (usesTokens) {
+   		task.getAnswer(function (answer) {
+            $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'getAnswerToken', sToken: token, sAnswer: answer}, function(postRes){
+               if (postRes.success && postRes.token) {
+                  task.gradeAnswer(answer, postRes.token, function(score,message,scoreToken) {
+                     $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'graderReturn', score: score, message: message, scoreToken: scoreToken}, {responseType: 'json'}).success(function(postRes) {
+                        if (postRes.success) {
+                           success();
+                        } else {
+                           error('something went wrong with api-entry.php: '+postRes.error);
+                        }
+                     }, 'json').fail(error);
+                  }, error);
+               } else {
+                  error('error in api-entry.php: '+postRes.error);
+               }
+            }, 'json').fail(error);
+         }, error);
+      } else {
+         task.getAnswer(function (answer) {
+            task.gradeAnswer(answer, null, function(score,message) {
+               $.post('api-entry.php', {platformName: platformName, action: 'graderReturnNoToken', score: score, message: message, sToken: token, sAnswer: answer}, {responseType: 'json'}).success(function(postRes) {
+                  if (postRes.success) {
+                     success();
+                  } else {
+                     error('something went wrong with api-entry.php: '+postRes.error);
+                  }
+               }, 'json').fail(error);
+            }, error);
+         }, error);
+      }
    }
 	platform.validate = function(mode, success, error) {
 	   if (mode == 'cancel') {
@@ -99,6 +131,10 @@ function platformLoad(task,platform,metaData) {
             $('#choose-view-'+viewName).addClass('btn-info');
          });
       });
+      task.reloadAnswer(lastAnswer, function() {});
+      if (lastState) {
+         task.reloadState(lastState, function() {});
+      }
    });
 }
 

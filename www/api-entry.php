@@ -24,12 +24,33 @@ function getTaskPlatformPublicKey($taskPlatformName) {
 	return $stmt->fetchColumn();
 }
 
+function getPlatformPublicKey($platformName) {
+	global $db;
+	$stmt = $db->prepare('select public_key from api_platforms where name = :name;');
+	$stmt->execute(['name' => $platformName]);
+	return $stmt->fetchColumn();
+}
+
 function getTaskTokenParams($taskPlatformName, $token) {
 	$publicKey = getTaskPlatformPublicKey($taskPlatformName);
 	if (!$publicKey) {
 		die(json_encode(['success' => false, 'error' => 'impossible to find public key of platform '.$taskPlatformName]));
 	}
 	$tokenParser = new TokenParser($publicKey, $taskPlatformName);
+	try {
+		$params = $tokenParser->decodeJWS($token);
+	} catch (Exception $e) {
+		die(json_encode(['success' => false, 'error' => 'cannot verify token: '.$e->getMessage()]));
+	}
+	return $params;
+}
+
+function getPlatformTokenParams($platformName, $token) {
+	$publicKey = getPlatformPublicKey($platformName);
+	if (!$publicKey) {
+		die(json_encode(['success' => false, 'error' => 'impossible to find public key of platform '.$platformName]));
+	}
+	$tokenParser = new TokenParser($publicKey, $platformName);
 	try {
 		$params = $tokenParser->decodeJWS($token);
 	} catch (Exception $e) {
@@ -62,15 +83,23 @@ function askHint($hintToken, $taskPlatformName) {
 	echo json_encode(['success' => true, 'token' => $token]);
 }
 
+function graderReturnNoToken($score,$message,$sAnswer,$sToken,$platformName) {
+	global $db;
+	$params = getPlatformTokenParams($platformName, $sToken);
+	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :idItem and sAnswer = :sAnswer;');
+	$stmt->execute(['sAnswer' => $sAnswer, 'idUser' => $params['idUser'], 'idItem' => $params['idItem'], 'score' => $score, 'message' => $message]);
+	sendLISResult($params['idUser'], $score);
+}
+
 function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
 	global $db;
 	$params = getTaskTokenParams($taskPlatformName, $scoreToken);
 	if (!isset($params['score']) || !isset($params['sAnswer']))  {
 		die(json_encode(['success' => false, 'error' => 'no "score" or "sAnswer" field in hint token']));
 	}
-	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\' where idUser = :idUser and sTaskTextId = :idItem and sAnswer = :sAnswer;');
+	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :idItem and sAnswer = :sAnswer;');
 	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'idItem' => $params['idItem'], 'score' => $params['score'], 'message' => $message]);
-	sendLISResult($params['idUser'], $score);
+	sendLISResult($params['idUser'], $params['score']);
 }
 
 function sendLISResult($userId, $score) {
@@ -89,7 +118,7 @@ function sendLISResult($userId, $score) {
 	$outcome->setValue($scoreOnOne);
 	$user = new LTI_User($resourceLink, $LISInfos['user_id']);
 	$ok = $resourceLink->doOutcomesService(LTI_Resource_Link::EXT_WRITE, $outcome, $user);
-	echo json_encode(['success' => true]);
+	echo json_encode(['success' => true, 'score' => $score]);
 }
 
 function getAnswerToken($token, $taskPlatformName, $answer) {
@@ -100,7 +129,7 @@ function getAnswerToken($token, $taskPlatformName, $answer) {
 	}
 	$stmt = $db->prepare('update api_users_tasks set nbSubmissions = nbSubmissions + 1 where idUser = :idUser and sTaskTextId = :idTask;');
 	$stmt->execute(['idUser' => $params['idUser'], 'idTask' => $params['idItem']]);
-	$stmt = $db->prepare('insert into api_submissions (idUser, sTaskTextId, sAnswer, state) values (:idUser, :idTask, :answer, \'validated\')');
+	$stmt = $db->prepare('insert into api_submissions (idUser, sTaskTextId, sAnswer, state, sDate) values (:idUser, :idTask, :answer, \'validated\', NOW())');
 	$stmt->execute(['answer' => $answer, 'idUser' => $params['idUser'], 'idTask' => $params['idItem']]);
 	$platformData = getUserPlatformData($params['idUser']);
 	if (!$platformData) {
@@ -116,11 +145,28 @@ function getAnswerToken($token, $taskPlatformName, $answer) {
 	echo json_encode(['success' => true, 'token' => $token]);
 }
 
+function saveState($token, $platformName, $sState) {
+	global $db;
+	$params = getPlatformTokenParams($platformName, $token);
+	if (!isset($params['idUser']) || !isset($params['idItem']))  {
+		die(json_encode(['success' => false, 'error' => 'no idUser nor idItem in token']));
+	}
+	$stmt = $db->prepare('update api_users_tasks set sState = :sState where idUser = :idUser and sTaskTextId = :idTask;');
+	$stmt->execute(['idUser' => $params['idUser'], 'idTask' => $params['idItem'], 'sState' => $sState]);
+	echo json_encode(['success' => true]);
+}
+
 if ($_POST['action'] == 'askHint') {
 	if (!isset($_POST['hintToken']) || !isset($_POST['taskPlatformName'])) {
 		die(json_encode(['success' => false, 'error' => 'missing token or taskPlatformName']));
 	}
 	askHint($_POST['hintToken'], $_POST['taskPlatformName']);
+}
+elseif ($_POST['action'] == 'saveState') {
+	if (!isset($_POST['sState']) || !isset($_POST['platformName'])) {
+		die(json_encode(['success' => false, 'error' => 'missing state or platformName']));
+	}
+	saveState($_POST['sToken'], $_POST['platformName'], $_POST['sState']);
 }
 elseif ($_POST['action'] == 'getAnswerToken') {
 	if (!isset($_POST['sToken']) || !isset($_POST['taskPlatformName']) || !isset($_POST['sAnswer'])) {
@@ -142,4 +188,11 @@ elseif ($_POST['action'] == 'graderReturn') {
 		$taskPlatformName = $_POST['taskPlatformName'];
 	}
 	graderReturn($_POST['score'], $_POST['message'], $_POST['scoreToken'], $taskPlatformName);
+}
+elseif ($_POST['action'] == 'graderReturnNoToken') {
+	if (!isset($_POST['score']) || !isset($_POST['sToken']) || !isset($_POST['sAnswer']) || !isset($_POST['platformName'])) {
+		die(json_encode(['success' => false, 'error' => 'missing score, message, sAnswer, platformName or sToken']));
+	}
+	$message = isset($_POST['message']) ? $_POST['message'] : '';
+	graderReturnNoToken($_POST['score'], $message, $_POST['sAnswer'], $_POST['sToken'], $_POST['platformName']);
 }
