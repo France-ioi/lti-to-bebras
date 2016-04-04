@@ -1,5 +1,4 @@
 function platformLoad(task,platform,metaData) {
-	console.error(platform);
 	platform.openUrl = function(sTextId, success, error) {success();};
 	platform.updateHeight = function(height,success,error) {
       $('#taskIframe').height(height);
@@ -23,6 +22,35 @@ function platformLoad(task,platform,metaData) {
          }, 'json').fail(console.error);
       });
    }, 3000);
+
+   var taskViews = {};
+   var frenchName = {
+      'task': 'Exercice',
+      'solution': 'Solution',
+      'editor': 'Résoudre',
+      'hints': 'Conseils'
+   };
+   var loadedViews = {'task': true, 'solution': true, 'hints': true, 'editor': true, 'grader': true, 'metadata': true, 'submission': true};
+   var shownViews = {'task': true};
+   var showViewsHandlerFactory = function (view) {
+      return function() {
+         var tmp = {};
+         tmp[view] = true;
+         task.showViews(tmp, function(){});
+         $('.choose-view-button').removeClass('btn-info');
+         $('#choose-view-'+view).addClass('btn-info');
+      };
+   };
+   var displayTabs = function() {
+      $("#choose-view").html("");
+      for (var viewName in taskViews)
+      {
+         if (!taskViews[viewName].requires && frenchName[viewName] && (viewName != 'solution' || bAccessSolution)) {
+            $("#choose-view").append($('<button id="choose-view-'+viewName+'" class="btn btn-default choose-view-button">' + frenchName[viewName] + '</button>').click(showViewsHandlerFactory(viewName)));
+         }
+      }
+   };
+
 	platform.getTaskParams = function(key, defaultValue, success, error) {
       var res = {'minScore': 0, 'maxScore': 100, 'noScore': 0, 'readOnly': false, 'randomSeed': 0, 'options': {}, returnUrl: returnUrl};
       if (key) {
@@ -57,6 +85,11 @@ function platformLoad(task,platform,metaData) {
       }, 'json').fail(error);
    };
 
+   function showSolution() {
+      bAccessSolution = true;
+      displayTabs();
+   }
+
    function gradeCurrentAnswer(success,error) {
       if (usesTokens) {
    		task.getAnswer(function (answer) {
@@ -66,6 +99,10 @@ function platformLoad(task,platform,metaData) {
                      $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'graderReturn', score: score, message: message, scoreToken: scoreToken}, {responseType: 'json'}).success(function(postRes) {
                         if (postRes.success) {
                            success();
+                           if (postRes.token) {
+                              task.updateToken(postRes.token, function() {});
+                              showSolution();
+                           }
                         } else {
                            error('something went wrong with api-entry.php: '+postRes.error);
                         }
@@ -82,6 +119,10 @@ function platformLoad(task,platform,metaData) {
                $.post('api-entry.php', {platformName: platformName, action: 'graderReturnNoToken', score: score, message: message, sToken: token, sAnswer: answer}, {responseType: 'json'}).success(function(postRes) {
                   if (postRes.success) {
                      success();
+                     if (postRes.token) {
+                        task.updateToken(postRes.token, function() {});
+                        showSolution();
+                     }
                   } else {
                      error('something went wrong with api-entry.php: '+postRes.error);
                   }
@@ -98,32 +139,11 @@ function platformLoad(task,platform,metaData) {
       	gradeCurrentAnswer(success,error);
 	   }
 	};
-   var loadedViews = {'task': true, 'solution': true, 'hints': true, 'editor': true, 'grader': true, 'metadata': true, 'submission': true};
-   var shownViews = {'task': true};
-   var showViewsHandlerFactory = function (view) {
-      return function() {
-         var tmp = {};
-         tmp[view] = true;
-         task.showViews(tmp, function(){});
-         $('.choose-view-button').removeClass('btn-info');
-         $('#choose-view-'+view).addClass('btn-info');
-      };
-   };
-   var frenchName = {
-      'task': 'Exercice',
-      'solution': 'Solution',
-      'editor': 'Résoudre',
-      'hints': 'Conseils'
-   };
+
    task.load(loadedViews, function() {
       task.getViews(function(views){
-         $("#choose-view").html("");
-         for (var viewName in views)
-         {
-            if (!views[viewName].requires && frenchName[viewName]) {
-               $("#choose-view").append($('<button id="choose-view-'+viewName+'" class="btn btn-default choose-view-button">' + frenchName[viewName] + '</button>').click(showViewsHandlerFactory(viewName)));
-            }
-         }
+         taskViews = views;
+         displayTabs();
       });
       task.showViews(shownViews, function() {
          $('.choose-view-button').removeClass('btn-info');

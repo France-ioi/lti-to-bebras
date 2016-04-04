@@ -95,7 +95,7 @@ function printPage($token, $taskPlatformUrl, $platformName, $taskPlatformName, $
 	$state = ($userTask && isset($userTask['sState'])) ? $userTask['sState'] : '';
 	$state = $state ? $state : '';
 	$lastAnswer = $lastAnswer ? : '';
-	$returnUrl = $config->baseUrl . '/api-entry.php';
+	$returnUrl = $config->baseUrl . '/api-entry.php'.'?taskPlatformName='.$taskPlatformName;
 ?>
 
 <!DOCTYPE html>
@@ -118,7 +118,8 @@ function printPage($token, $taskPlatformUrl, $platformName, $taskPlatformName, $
     	var lastState = '<?= $state ?>';
     	var taskPlatformName = '<?= $taskPlatformName; ?>';
     	var usesTokens = <?= $bUsesTokens ?>;
-    	var returnUrl = '<? $returnUrl ?>';
+    	var returnUrl = '<?= $returnUrl ?>';
+    	var bAccessSolution = <?= $userTask['bAccessSolution'] ?>;
     </script>
     </head>
     <body>

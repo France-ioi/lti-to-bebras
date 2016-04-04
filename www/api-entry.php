@@ -88,7 +88,19 @@ function graderReturnNoToken($score,$message,$sAnswer,$sToken,$platformName) {
 	$params = getPlatformTokenParams($platformName, $sToken);
 	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :idItem and sAnswer = :sAnswer;');
 	$stmt->execute(['sAnswer' => $sAnswer, 'idUser' => $params['idUser'], 'idItem' => $params['idItem'], 'score' => $score, 'message' => $message]);
+	$token = '';
+	if ($score == 100) {
+		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :idItem;');
+		$stmt->execute(['idUser' => $params['idUser'], 'idItem' => $params['idItem']]);
+		$platformData = getUserPlatformData($params['idUser']);
+		if (!$platformData) {
+			die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));
+		}
+		$userTask = getUserTask($params['idItem'], $params['idUser']);
+		$token = generateToken($params['idUser'], $userTask, $platformData, $params['idItem']);
+	}
 	sendLISResult($params['idUser'], $score);
+	echo json_encode(['success' => true, 'score' => $score, 'token' => $token]);
 }
 
 function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
@@ -99,7 +111,19 @@ function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
 	}
 	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :idItem and sAnswer = :sAnswer;');
 	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'idItem' => $params['idItem'], 'score' => $params['score'], 'message' => $message]);
+	$token = '';
+	if ($score == 100) {
+		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :idItem;');
+		$stmt->execute(['idUser' => $params['idUser'], 'idItem' => $params['idItem']]);
+		$platformData = getUserPlatformData($params['idUser']);
+		if (!$platformData) {
+			die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));
+		}
+		$userTask = getUserTask($params['idItem'], $params['idUser']);
+		$token = generateToken($params['idUser'], $userTask, $platformData, $params['idItem']);
+	}
 	sendLISResult($params['idUser'], $params['score']);
+	echo json_encode(['success' => true, 'score' => $score, 'token' => $token]);
 }
 
 function sendLISResult($userId, $score) {
@@ -118,7 +142,6 @@ function sendLISResult($userId, $score) {
 	$outcome->setValue($scoreOnOne);
 	$user = new LTI_User($resourceLink, $LISInfos['user_id']);
 	$ok = $resourceLink->doOutcomesService(LTI_Resource_Link::EXT_WRITE, $outcome, $user);
-	echo json_encode(['success' => true, 'score' => $score]);
 }
 
 function getAnswerToken($token, $taskPlatformName, $answer) {
