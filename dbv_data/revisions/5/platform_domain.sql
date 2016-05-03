@@ -1,0 +1,1 @@
+ALTER TABLE `api_task_platforms` ADD `domain` VARCHAR(255) NULL DEFAULT NULL AFTER `name`;
