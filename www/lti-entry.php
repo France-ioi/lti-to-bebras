@@ -8,14 +8,9 @@ require_once __DIR__.'/../shared/TokenGenerator.php';
 require_once __DIR__.'/../shared/common.php';
 require_once 'LTI_Tool_Provider.php';
 
-$taskId = isset($_GET['taskId']) ? $_GET['taskId'] : null;
-if (!$taskId) {
-	echo "Vous devez spécifier un taskId!";
-}
-
-$taskPlatformName = isset($_GET['taskPlatformName']) ? $_GET['taskPlatformName'] : null;
-if (!$taskPlatformName) {
-	echo "Vous devez spécifier un taskPlatformName!";
+$taskUrl = isset($_GET['taskUrl']) ? $_GET['taskUrl'] : null;
+if (!$taskUrl) {
+	die("Vous devez spécifier l'url d'un exercice dans le paramètre taskUrl!");
 }
 
 function saveUser($user) {
@@ -49,32 +44,28 @@ function saveUser($user) {
 }
 
 function handleLtiResources($user) {
-	global $taskId, $taskPlatformName, $db;
+	global $taskUrl, $db;
 	$userId = saveUser($user);
 	if (!$userId) {
 		die('impossible d\'enegistrer l\'utilisateur');
 	}
-	$userTask = getUserTask($taskId, $userId);
+	$userTask = getUserTask($taskUrl, $userId);
 	$platformData = getApiPlatform($user->getResourceLink()->getKey());
 	if (!$platformData) {
 		die('impossible de trouver la plateforme correspondante');
 	}
-	$taskPlatform = getTaskPlatform($taskPlatformName);
+	$taskPlatform = getTaskPlatform($taskUrl);
 	if (!$taskPlatform) {
 		die('impossible de trouver la platforme d\'exercices');
 	}
-	$token = generateToken($userId, $userTask, $platformData, $taskId);
+	$token = generateToken($userId, $userTask, $platformData, $taskUrl);
 	if (!$token) {
 		die('impossible de générer le token');
 	}
 	$stmt = $db->prepare('select sAnswer from api_submissions where idUser = :idUser and sTaskTextId = :idTask order by sDate desc limit 1;');
-	$stmt->execute(['idUser' => $userId, 'idTask' => $taskId]);
+	$stmt->execute(['idUser' => $userId, 'idTask' => $taskUrl]);
 	$lastAnswer = $stmt->fetchColumn();
-	$url = $taskPlatform['url'];
-	if ($taskPlatform['bAppendIdToUrl']) {
-		$url = $url.$taskId;
-	}
-	printPage($token, $url, $platformData['name'], $taskPlatform['name'], $taskPlatform['bUsesTokens'], $userTask, $lastAnswer);
+	printPage($token, $taskUrl, $platformData['name'], $taskPlatform['name'], $taskPlatform['bUsesTokens'], $userTask, $lastAnswer);
 }
 
 // actual lti handling:
@@ -90,7 +81,7 @@ $tool->execute();
 
 // TODO: getLastAnswer, getLastState, synchronise state
 
-function printPage($token, $taskPlatformUrl, $platformName, $taskPlatformName, $bUsesTokens, $userTask, $lastAnswer) {
+function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTokens, $userTask, $lastAnswer) {
 	global $config;
 	$state = ($userTask && isset($userTask['sState'])) ? $userTask['sState'] : '';
 	$state = $state ? $state : '';
@@ -112,7 +103,7 @@ function printPage($token, $taskPlatformUrl, $platformName, $taskPlatformName, $
     <script type="text/javascript" src="ltitobebras.js"></script>
     <script type="text/javascript">
     	var token = '<?= $token ?>';
-    	var taskPlatformUrl = '<?= $taskPlatformUrl; ?>';
+    	var taskUrl = '<?= $taskUrl; ?>';
     	var platformName = '<?= $platformName; ?>';
     	var lastAnswer = '<?= $lastAnswer; ?>';
     	var lastState = '<?= $state ?>';
@@ -121,11 +112,11 @@ function printPage($token, $taskPlatformUrl, $platformName, $taskPlatformName, $
     	var returnUrl = '<?= $returnUrl ?>';
     	var bAccessSolution = <?= $userTask['bAccessSolution'] ?>;
     </script>
-    </head>
-    <body>
+  </head>
+  <body>
     <div id="choose-view"></div>
-    <iframe style="width:800px;height:800px;" id="taskIframe" src="<?= $taskPlatformUrl; ?>?sToken=<?= $token ?>&sPlatform=<?= $platformName ?>&channelId=<?= $taskPlatformName; ?>"></iframe>
-    </body>
-    </html>
+    <iframe style="width:800px;height:800px;" id="taskIframe" src="<?= $taskUrl; ?>?sToken=<?= $token ?>&sPlatform=<?= $platformName ?>&channelId=<?= $taskPlatformName; ?>"></iframe>
+  </body>
+</html>
 <?php
 }

@@ -73,31 +73,31 @@ function askHint($hintToken, $taskPlatformName) {
 		die(json_encode(['success' => false, 'error' => 'no "askedHint" field in hint token']));
 	}
 	$stmt = $db->prepare('update api_users_tasks set nbHintsGiven = :askedHint where idUser = :idUser and sTaskTextId = :idTask;');
-	$stmt->execute(['askedHint' => $params['askedHint'], 'idUser' => $params['idUser'], 'idTask' => $params['idItem']]);
+	$stmt->execute(['askedHint' => $params['askedHint'], 'idUser' => $params['idUser'], 'idTask' => $params['itemUrl']]);
 	$platformData = getUserPlatformData($params['idUser']);
 	if (!$platformData) {
 		die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));
 	}
-	$userTask = getUserTask($params['idItem'], $params['idUser']);
-	$token = generateToken($params['idUser'], $userTask, $platformData, $params['idItem']);
+	$userTask = getUserTask($params['itemUrl'], $params['idUser']);
+	$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl']);
 	echo json_encode(['success' => true, 'token' => $token]);
 }
 
 function graderReturnNoToken($score,$message,$sAnswer,$sToken,$platformName) {
 	global $db;
 	$params = getPlatformTokenParams($platformName, $sToken);
-	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :idItem and sAnswer = :sAnswer;');
-	$stmt->execute(['sAnswer' => $sAnswer, 'idUser' => $params['idUser'], 'idItem' => $params['idItem'], 'score' => $score, 'message' => $message]);
+	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :itemUrl and sAnswer = :sAnswer;');
+	$stmt->execute(['sAnswer' => $sAnswer, 'idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl'], 'score' => $score, 'message' => $message]);
 	$token = '';
 	if ($score == 100) {
-		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :idItem;');
-		$stmt->execute(['idUser' => $params['idUser'], 'idItem' => $params['idItem']]);
+		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :itemUrl;');
+		$stmt->execute(['idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl']]);
 		$platformData = getUserPlatformData($params['idUser']);
 		if (!$platformData) {
 			die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));
 		}
-		$userTask = getUserTask($params['idItem'], $params['idUser']);
-		$token = generateToken($params['idUser'], $userTask, $platformData, $params['idItem']);
+		$userTask = getUserTask($params['itemUrl'], $params['idUser']);
+		$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl']);
 	}
 	sendLISResult($params['idUser'], $score);
 	echo json_encode(['success' => true, 'score' => $score, 'token' => $token]);
@@ -109,18 +109,18 @@ function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
 	if (!isset($params['score']) || !isset($params['sAnswer']))  {
 		die(json_encode(['success' => false, 'error' => 'no "score" or "sAnswer" field in hint token']));
 	}
-	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :idItem and sAnswer = :sAnswer;');
-	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'idItem' => $params['idItem'], 'score' => $params['score'], 'message' => $message]);
+	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :itemUrl and sAnswer = :sAnswer;');
+	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl'], 'score' => $params['score'], 'message' => $message]);
 	$token = '';
 	if ($score == 100) {
-		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :idItem;');
-		$stmt->execute(['idUser' => $params['idUser'], 'idItem' => $params['idItem']]);
+		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :itemUrl;');
+		$stmt->execute(['idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl']]);
 		$platformData = getUserPlatformData($params['idUser']);
 		if (!$platformData) {
 			die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));
 		}
-		$userTask = getUserTask($params['idItem'], $params['idUser']);
-		$token = generateToken($params['idUser'], $userTask, $platformData, $params['idItem']);
+		$userTask = getUserTask($params['itemUrl'], $params['idUser']);
+		$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl']);
 	}
 	sendLISResult($params['idUser'], $params['score']);
 	echo json_encode(['success' => true, 'score' => $score, 'token' => $token]);
@@ -147,20 +147,20 @@ function sendLISResult($userId, $score) {
 function getAnswerToken($token, $taskPlatformName, $answer) {
 	global $db;
 	$params = getTaskTokenParams($taskPlatformName, $token);
-	if (!isset($params['idUser']) || !isset($params['idItem']))  {
-		die(json_encode(['success' => false, 'error' => 'no idUser nor idItem in token']));
+	if (!isset($params['idUser']) || !isset($params['itemUrl']))  {
+		die(json_encode(['success' => false, 'error' => 'no idUser nor itemUrl in token']));
 	}
 	$stmt = $db->prepare('update api_users_tasks set nbSubmissions = nbSubmissions + 1 where idUser = :idUser and sTaskTextId = :idTask;');
-	$stmt->execute(['idUser' => $params['idUser'], 'idTask' => $params['idItem']]);
+	$stmt->execute(['idUser' => $params['idUser'], 'idTask' => $params['itemUrl']]);
 	$stmt = $db->prepare('insert into api_submissions (idUser, sTaskTextId, sAnswer, state, sDate) values (:idUser, :idTask, :answer, \'validated\', NOW())');
-	$stmt->execute(['answer' => $answer, 'idUser' => $params['idUser'], 'idTask' => $params['idItem']]);
+	$stmt->execute(['answer' => $answer, 'idUser' => $params['idUser'], 'idTask' => $params['itemUrl']]);
 	$platformData = getUserPlatformData($params['idUser']);
 	if (!$platformData) {
 		die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));
 	}
 	$tokenGenerator = new TokenGenerator($platformData['private_key'], $platformData['name'], null);
 	$params = [
-		'idItem' => $params['idItem'],
+		'itemUrl' => $params['itemUrl'],
 		'idUser' => $params['idUser'],
 		'sAnswer' => $answer
 	];
@@ -171,11 +171,11 @@ function getAnswerToken($token, $taskPlatformName, $answer) {
 function saveState($token, $platformName, $sState) {
 	global $db;
 	$params = getPlatformTokenParams($platformName, $token);
-	if (!isset($params['idUser']) || !isset($params['idItem']))  {
-		die(json_encode(['success' => false, 'error' => 'no idUser nor idItem in token']));
+	if (!isset($params['idUser']) || !isset($params['itemUrl']))  {
+		die(json_encode(['success' => false, 'error' => 'no idUser nor itemUrl in token']));
 	}
 	$stmt = $db->prepare('update api_users_tasks set sState = :sState where idUser = :idUser and sTaskTextId = :idTask;');
-	$stmt->execute(['idUser' => $params['idUser'], 'idTask' => $params['idItem'], 'sState' => $sState]);
+	$stmt->execute(['idUser' => $params['idUser'], 'idTask' => $params['itemUrl'], 'sState' => $sState]);
 	echo json_encode(['success' => true]);
 }
 
