@@ -13,6 +13,29 @@ if (!$taskUrl) {
 	die("Vous devez spécifier l'url d'un exercice dans le paramètre taskUrl!");
 }
 
+$themeName = isset($_GET['theme']) ? $_GET['theme'] : 'default';
+
+$viewNames = [
+	'task' => 'Exercice',
+    'solution' => 'Solution',
+    'editor' => 'Résoudre',
+    'hints' => 'Conseils'
+];
+$themeCss = '';
+$themeButtonsPosition = 'top';
+
+if ($themeName == 'funtelecom') {
+	$viewNames = [
+		'task' => 'Consignes',
+	    'solution' => 'Solution',
+	    'editor' => 'Soumettre',
+	    'hints' => 'Indices'
+	];	
+	$themeCss = '.choose-view-button {margin-left: 10px;margin-bottom: 10px;margin-top:10px;height: 40px;vertical-align: middle;text-transform: uppercase;font-weight: 600;border: 1px solid #D2C9C9;border-radius: 3px;box-shadow: 0px 1px 0px 0px #FFF inset;color: #333;display: inline-block;font-weight: bold;background-color: #F1F1F1;background-image: linear-gradient(#F1F1F1, #D9D1D1);padding: 7px 18px;text-decoration: none;text-shadow: 0px 1px 0px #FCFBFB;background-clip: padding-box;font-size: 0.8125em;cursor: pointer;text-align: center;font: 1.2rem/1.6rem "Open Sans",Verdana,Geneva,sans-serif,sans-serif;}'."\n";
+	$themeCss .= '.btn-info {color:white !important;background-color:#004e73 !important;background-image: linear-gradient(#036592, #004769) !important;}';
+	$themeButtonsPosition = 'topbottom';
+}
+
 function saveUser($user) {
 	global $db;
 	//$firstName = $user->firstName;
@@ -82,7 +105,7 @@ $tool->execute();
 // TODO: getLastAnswer, getLastState, synchronise state
 
 function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTokens, $userTask, $lastAnswer) {
-	global $config;
+	global $config, $viewNames, $themeCss, $themeButtonsPosition;
 	$state = ($userTask && isset($userTask['sState'])) ? $userTask['sState'] : '';
 	$state = $state ? $state : '';
 	$lastAnswer = $lastAnswer ? : '';
@@ -101,6 +124,7 @@ function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTok
     <script type="text/javascript" src="bower_components/pem-platform/task-xd-pr.js"></script>
     <script type="text/javascript" src="bower_components/jschannel/src/jschannel.js"></script>
     <script type="text/javascript" src="ltitobebras.js"></script>
+    <style><?= $themeCss ?></style>
     <script type="text/javascript">
     	var token = '<?= $token ?>';
     	var taskUrl = '<?= $taskUrl; ?>';
@@ -111,11 +135,14 @@ function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTok
     	var usesTokens = <?= $bUsesTokens ?>;
     	var returnUrl = '<?= $returnUrl ?>';
     	var bAccessSolution = <?= $userTask['bAccessSolution'] ?>;
+    	var viewNames = <?= json_encode($viewNames); ?>;
+    	var buttonsPosition = <?= json_encode($themeButtonsPosition); ?>;
     </script>
   </head>
   <body>
-    <div id="choose-view"></div>
+    <div id="choose-view-top"></div>
     <iframe style="width:800px;height:800px;" id="taskIframe" src="<?= $taskUrl; ?>?sToken=<?= $token ?>&sPlatform=<?= $platformName ?>&channelId=<?= $taskPlatformName; ?>"></iframe>
+    <div id="choose-view-bottom"></div>
   </body>
 </html>
 <?php

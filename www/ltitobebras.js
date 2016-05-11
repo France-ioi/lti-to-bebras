@@ -24,12 +24,6 @@ function platformLoad(task,platform,metaData) {
    }, 3000);
 
    var taskViews = {};
-   var frenchName = {
-      'task': 'Exercice',
-      'solution': 'Solution',
-      'editor': 'Résoudre',
-      'hints': 'Conseils'
-   };
    var loadedViews = {'task': true, 'solution': true, 'hints': true, 'editor': true, 'grader': true, 'metadata': true, 'submission': true};
    var shownViews = {'task': true};
    var showViewsHandlerFactory = function (view) {
@@ -38,15 +32,25 @@ function platformLoad(task,platform,metaData) {
          tmp[view] = true;
          task.showViews(tmp, function(){});
          $('.choose-view-button').removeClass('btn-info');
-         $('#choose-view-'+view).addClass('btn-info');
+         if (buttonsPosition == 'top' || buttonsPosition == 'topbottom') {
+            $('#choose-view-top-'+view).addClass('btn-info');
+         }
+         if (buttonsPosition == 'bottom' || buttonsPosition == 'topbottom') {
+            $('#choose-view-bottom-'+view).addClass('btn-info');
+         }
       };
    };
    var displayTabs = function() {
-      $("#choose-view").html("");
-      for (var viewName in taskViews)
-      {
-         if (!taskViews[viewName].requires && frenchName[viewName] && (viewName != 'solution' || bAccessSolution)) {
-            $("#choose-view").append($('<button id="choose-view-'+viewName+'" class="btn btn-default choose-view-button">' + frenchName[viewName] + '</button>').click(showViewsHandlerFactory(viewName)));
+      $("#choose-view-top").html("");
+      $("#choose-view-bottom").html("");
+      for (var viewName in taskViews) {
+         if (!taskViews[viewName].requires && viewNames[viewName] && (viewName != 'solution' || bAccessSolution)) {
+            if (buttonsPosition == 'top' || buttonsPosition == 'topbottom') {
+               $("#choose-view-top").append($('<button id="choose-view-top-'+viewName+'" class="btn btn-default choose-view-button">' + viewNames[viewName] + '</button>').click(showViewsHandlerFactory(viewName)));
+            }
+            if (buttonsPosition == 'bottom' || buttonsPosition == 'topbottom') {
+               $("#choose-view-bottom").append($('<button id="choose-view-bottom-'+viewName+'" class="btn btn-default choose-view-button">' + viewNames[viewName] + '</button>').click(showViewsHandlerFactory(viewName)));
+            }
          }
       }
    };
@@ -148,7 +152,12 @@ function platformLoad(task,platform,metaData) {
       task.showViews(shownViews, function() {
          $('.choose-view-button').removeClass('btn-info');
          $.each(shownViews, function(viewName) {
-            $('#choose-view-'+viewName).addClass('btn-info');
+            if (buttonsPosition == 'top' || buttonsPosition == 'topbottom') {
+               $('#choose-view-top-'+viewName).addClass('btn-info');
+            }
+            if (buttonsPosition == 'bottom' || buttonsPosition == 'topbottom') {
+               $('#choose-view-bottom-'+viewName).addClass('btn-info');
+            }
          });
       });
       task.reloadAnswer(lastAnswer, function() {});
