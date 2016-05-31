@@ -81,7 +81,7 @@ function handleLtiResources($user) {
 	if (!$taskPlatform) {
 		die('impossible de trouver la platforme d\'exercices');
 	}
-	$token = generateToken($userId, $userTask, $platformData, $taskUrl);
+	$token = generateToken($userId, $userTask, $platformData, $taskUrl, $user);
 	if (!$token) {
 		die('impossible de générer le token');
 	}
@@ -141,7 +141,7 @@ function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTok
   </head>
   <body>
     <div id="choose-view-top"></div>
-    <iframe style="width:800px;height:800px;" id="taskIframe" src="<?= $taskUrl; ?>?sToken=<?= $token ?>&sPlatform=<?= $platformName ?>&channelId=<?= $taskPlatformName; ?>"></iframe>
+    <iframe style="width:800px;height:800px;" id="taskIframe" src="<?= $taskUrl . (strpos($taskUrl, '?') === false ? '?' : '&') ?>sToken=<?= $token ?>&sPlatform=<?= $platformName ?>&channelId=<?= $taskPlatformName; ?>"></iframe>
     <div id="choose-view-bottom"></div>
   </body>
 </html>
