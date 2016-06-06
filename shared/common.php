@@ -27,7 +27,7 @@ function getUserTask($taskId, $userId) {
 	}
 }
 
-function generateToken($userId, $userTask, $platformData, $taskUrl, $user) {
+function generateToken($userId, $userTask, $platformData, $taskUrl, $user=null) {
 	$tokenGenerator = new TokenGenerator($platformData['private_key'], $platformData['name'], null);
 	$params = [
 		'bAccessSolutions' => $userTask['bAccessSolution'],
@@ -41,8 +41,10 @@ function generateToken($userId, $userTask, $platformData, $taskUrl, $user) {
 		'bIsAdmin' => false,
 		'bIsDefault' => false,
 		'sSupportedLangProg' => '*',
-		'sLogin' => '',
-		'loginData' => [
+		'sLogin' => ''
+	];
+	if ($user) {
+		$params['loginData'] = [
 			'type' => 'lti',
 			'email' => $user->email,
 			'firstName' => $user->firstname,
@@ -50,8 +52,8 @@ function generateToken($userId, $userTask, $platformData, $taskUrl, $user) {
 			'login' => null,
 			'lti_consumer_key' => $user->getResourceLink()->getConsumer()->getKey(),
 			'lti_user_id' => $user->getId()
-		]
-	];
+		];
+	}
 	return $tokenGenerator->encodeJWS($params);
 }
 
