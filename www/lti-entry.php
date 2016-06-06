@@ -28,11 +28,62 @@ if ($themeName == 'funtelecom') {
 	$viewNames = [
 		'task' => 'Consignes',
 	    'solution' => 'Solution',
-	    'editor' => 'Soumettre',
+	    'editor' => 'À vous de jouer',
 	    'hints' => 'Indices'
 	];	
-	$themeCss = '.choose-view-button {margin-left: 10px;margin-bottom: 10px;margin-top:10px;height: 40px;vertical-align: middle;text-transform: uppercase;font-weight: 600;border: 1px solid #D2C9C9;border-radius: 3px;box-shadow: 0px 1px 0px 0px #FFF inset;color: #333;display: inline-block;font-weight: bold;background-color: #F1F1F1;background-image: linear-gradient(#F1F1F1, #D9D1D1);padding: 7px 18px;text-decoration: none;text-shadow: 0px 1px 0px #FCFBFB;background-clip: padding-box;font-size: 0.8125em;cursor: pointer;text-align: center;font: 1.2rem/1.6rem "Open Sans",Verdana,Geneva,sans-serif,sans-serif;}'."\n";
-	$themeCss .= '.btn-info {color:white !important;background-color:#004e73 !important;background-image: linear-gradient(#036592, #004769) !important;}';
+	$themeCss = "#choose-view-top {
+	display:flex;
+    width: 800px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+#choose-view-bottom {
+	display:flex;
+	width: 800px;
+	margin-top: 10px;
+    margin-bottom: 10px;
+}
+.btn-info {
+  border-bottom: 3px solid #2aa3ff !important;
+  color: #333;
+  background-color:white;
+}
+.btn-default:hover {
+  color: #333 !important;
+  background-color: white !important;
+  border-top:0px!important;
+  border-left:0px!important;
+  border-right:0px!important;
+  border-bottom: 1px solid grey;
+}
+.choose-view-button {
+  flex: 1 0 auto;
+  border: 0px;
+  border-bottom: 1px solid grey;
+  margin-top: 10px;
+  height: 40px;
+  vertical-align: middle;
+  font-size: 14pt;
+  border-radius: 0;
+  color: #333;
+  font-size: 14pt;
+  cursor: pointer;
+  text-align: center;
+  box-shadow:none !important;
+  -webkit-box-shadow:none !important;
+  outline:none !important;
+}
+.choose-view-button:focus {
+  border-top: 0px;
+  border-left:0px;
+  border-right:0px;
+}
+.btn-info:hover {
+  color: #fff;
+  background-color: #31b0d5;
+  border-bottom: 3px solid #2aa3ff !important;
+}
+";
 	$themeButtonsPosition = 'topbottom';
 }
 
