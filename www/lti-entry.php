@@ -45,8 +45,8 @@ if ($themeName == 'funtelecom') {
 }
 .btn-info {
   border-bottom: 3px solid #2aa3ff !important;
-  color: #333;
-  background-color:white;
+  color: #333 !important;
+  background-color:white !important;
 }
 .btn-default:hover {
   color: #333 !important;

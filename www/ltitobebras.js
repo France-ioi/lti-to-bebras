@@ -79,8 +79,8 @@ function platformLoad(task,platform,metaData) {
       }
       $.post('api-entry.php', {taskPlatformName: taskPlatformName, action: 'askHint', hintToken: hintToken}, function(postRes){
          if (postRes.success && postRes.token) {
+            token = postRes.token;
          	task.updateToken(token, function() {
-               token = postRes.token;
          		success();
          	}, error);
          } else {

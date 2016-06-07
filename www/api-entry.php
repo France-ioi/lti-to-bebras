@@ -210,12 +210,12 @@ elseif ($_POST['action'] == 'graderReturn') {
 	} else {
 		$taskPlatformName = $_POST['taskPlatformName'];
 	}
-	graderReturn($_POST['score'], $_POST['message'], $_POST['scoreToken'], $taskPlatformName);
+	graderReturn(intval($_POST['score']), $_POST['message'], $_POST['scoreToken'], $taskPlatformName);
 }
 elseif ($_POST['action'] == 'graderReturnNoToken') {
 	if (!isset($_POST['score']) || !isset($_POST['sToken']) || !isset($_POST['sAnswer']) || !isset($_POST['platformName'])) {
 		die(json_encode(['success' => false, 'error' => 'missing score, message, sAnswer, platformName or sToken']));
 	}
 	$message = isset($_POST['message']) ? $_POST['message'] : '';
-	graderReturnNoToken($_POST['score'], $message, $_POST['sAnswer'], $_POST['sToken'], $_POST['platformName']);
+	graderReturnNoToken(intval($_POST['score']), $message, $_POST['sAnswer'], $_POST['sToken'], $_POST['platformName']);
 }
