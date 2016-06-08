@@ -43,7 +43,9 @@ function platformLoad(task,platform,metaData) {
    var displayTabs = function() {
       $("#choose-view-top").html("");
       $("#choose-view-bottom").html("");
-      for (var viewName in taskViews) {
+      for (var iView = 0; iView < viewOrder.length; iView++) {
+         var viewName = viewOrder[iView];//taskViews
+         if (!taskViews[viewName]) continue;
          if (!taskViews[viewName].requires && viewNames[viewName] && (viewName != 'solution' || bAccessSolution)) {
             if (buttonsPosition == 'top' || buttonsPosition == 'topbottom') {
                $("#choose-view-top").append($('<button id="choose-view-top-'+viewName+'" class="btn btn-default choose-view-button">' + viewNames[viewName] + '</button>').click(showViewsHandlerFactory(viewName)));

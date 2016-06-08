@@ -1,0 +1,1 @@
+ALTER TABLE `api_submissions` CHANGE `sAnswer` `sAnswer` MEDIUMTEXT CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;

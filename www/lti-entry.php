@@ -16,11 +16,12 @@ if (!$taskUrl) {
 $themeName = isset($_GET['theme']) ? $_GET['theme'] : 'default';
 
 $viewNames = [
-	'task' => 'Exercice',
-    'solution' => 'Solution',
+	  'task' => 'Exercice',
     'editor' => 'Résoudre',
-    'hints' => 'Conseils'
+    'hints' => 'Conseils',
+    'solution' => 'Solution',
 ];
+$viewOrder = ['task', 'hints', 'editor', 'solution'];
 $themeCss = '';
 $themeButtonsPosition = 'top';
 
@@ -156,7 +157,7 @@ $tool->execute();
 // TODO: getLastAnswer, getLastState, synchronise state
 
 function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTokens, $userTask, $lastAnswer) {
-	global $config, $viewNames, $themeCss, $themeButtonsPosition;
+	global $config, $viewNames, $themeCss, $themeButtonsPosition, $viewOrder;
 	$state = ($userTask && isset($userTask['sState'])) ? $userTask['sState'] : '';
 	$state = $state ? $state : '';
 	$lastAnswer = $lastAnswer ? : '';
@@ -180,13 +181,14 @@ function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTok
     	var token = '<?= $token ?>';
     	var taskUrl = '<?= $taskUrl; ?>';
     	var platformName = '<?= $platformName; ?>';
-    	var lastAnswer = '<?= $lastAnswer; ?>';
-    	var lastState = '<?= $state ?>';
+    	var lastAnswer = <?= json_encode($lastAnswer); ?>;
+    	var lastState = <?= json_encode($state) ?>;
     	var taskPlatformName = '<?= $taskPlatformName; ?>';
     	var usesTokens = <?= $bUsesTokens ?>;
     	var returnUrl = '<?= $returnUrl ?>';
     	var bAccessSolution = <?= $userTask['bAccessSolution'] ?>;
     	var viewNames = <?= json_encode($viewNames); ?>;
+      var viewOrder = <?= json_encode($viewOrder); ?>;
     	var buttonsPosition = <?= json_encode($themeButtonsPosition); ?>;
     </script>
   </head>
