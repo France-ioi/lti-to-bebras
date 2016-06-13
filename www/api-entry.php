@@ -83,13 +83,21 @@ function askHint($hintToken, $taskPlatformName) {
 	echo json_encode(['success' => true, 'token' => $token]);
 }
 
+function getPreviousBestScore($params) {
+	global $db;
+	$stmt = $db->prepare('select max(score) as score from api_submissions where idUser = :idUser and sTaskTextId = :itemUrl;');
+	$stmt->execute(['idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl']]);
+	return intval($stmt->fetchColumn());
+}
+
 function graderReturnNoToken($score,$message,$sAnswer,$sToken,$platformName) {
 	global $db;
 	$params = getPlatformTokenParams($platformName, $sToken);
 	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :itemUrl and sAnswer = :sAnswer;');
 	$stmt->execute(['sAnswer' => $sAnswer, 'idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl'], 'score' => $score, 'message' => $message]);
 	$token = '';
-	if ($score == 100) {
+	$oldScore = getPreviousBestScore($params);
+	if ($score == 100 && $oldScore < 100) {
 		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :itemUrl;');
 		$stmt->execute(['idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl']]);
 		$platformData = getUserPlatformData($params['idUser']);
@@ -99,20 +107,23 @@ function graderReturnNoToken($score,$message,$sAnswer,$sToken,$platformName) {
 		$userTask = getUserTask($params['itemUrl'], $params['idUser']);
 		$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl']);
 	}
-	sendLISResult($params['idUser'], $score);
+	$maxScore = max($score, $oldScore);
+	sendLISResult($params['idUser'], $maxScore);
 	echo json_encode(['success' => true, 'score' => $score, 'token' => $token]);
 }
 
 function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
 	global $db;
 	$params = getTaskTokenParams($taskPlatformName, $scoreToken);
+	$score = intval($params['score']);
 	if (!isset($params['score']) || !isset($params['sAnswer']))  {
 		die(json_encode(['success' => false, 'error' => 'no "score" or "sAnswer" field in hint token']));
 	}
 	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :itemUrl and sAnswer = :sAnswer;');
-	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl'], 'score' => $params['score'], 'message' => $message]);
+	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl'], 'score' => $score, 'message' => $message]);
 	$token = '';
-	if ($score == 100) {
+	$oldScore = getPreviousBestScore($params);
+	if ($score == 100 && $oldScore < 100) {
 		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :itemUrl;');
 		$stmt->execute(['idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl']]);
 		$platformData = getUserPlatformData($params['idUser']);
@@ -122,8 +133,10 @@ function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
 		$userTask = getUserTask($params['itemUrl'], $params['idUser']);
 		$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl']);
 	}
-	sendLISResult($params['idUser'], $params['score']);
-	echo json_encode(['success' => true, 'score' => $score, 'token' => $token]);
+	$maxScore = max($score, $oldScore);
+	//sendLISResult($params['idUser'], $maxScore);
+	sendLISResult($params['idUser'], $maxScore);
+	echo json_encode(['success' => true, 'score' => $score, 'token' => $token, 'oldScore' => $oldScore, 'params' => $params]);
 }
 
 function sendLISResult($userId, $score) {
