@@ -90,6 +90,7 @@ if ($themeName == 'funtelecom') {
 
 function saveUser($user) {
 	global $db;
+  //var_dump($user);
 	//$firstName = $user->firstName;
 	//$lastName = $user->lastName;
 	// TODO
@@ -97,7 +98,7 @@ function saveUser($user) {
 	$lastName = '';
 	$email = $user->email;
 	$lti_user_id = $user->getId();
-	$lti_context_id = $user->getResourceLink()->lti_context_id;
+	$lti_context_id = $user->getResourceLink()->lti_resource_link_id;
 	$lti_consumer_key = $user->getResourceLink()->getConsumer()->getKey();
 	// TODO: update name if different?
 	$stmt = $db->prepare('insert ignore into api_users (lti_context_id, lti_consumer_key, lti_user_id, firstName, lastName, email) values (:lticontextid, :lticonsumerkey, :ltiuserid, :firstName, :lastName, :email);');

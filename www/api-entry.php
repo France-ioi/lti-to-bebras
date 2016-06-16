@@ -93,10 +93,10 @@ function getPreviousBestScore($params) {
 function graderReturnNoToken($score,$message,$sAnswer,$sToken,$platformName) {
 	global $db;
 	$params = getPlatformTokenParams($platformName, $sToken);
+	$oldScore = getPreviousBestScore($params);
 	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :itemUrl and sAnswer = :sAnswer;');
 	$stmt->execute(['sAnswer' => $sAnswer, 'idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl'], 'score' => $score, 'message' => $message]);
 	$token = '';
-	$oldScore = getPreviousBestScore($params);
 	if ($score == 100 && $oldScore < 100) {
 		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :itemUrl;');
 		$stmt->execute(['idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl']]);
@@ -119,10 +119,10 @@ function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
 	if (!isset($params['score']) || !isset($params['sAnswer']))  {
 		die(json_encode(['success' => false, 'error' => 'no "score" or "sAnswer" field in hint token']));
 	}
+	$oldScore = getPreviousBestScore($params);
 	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :itemUrl and sAnswer = :sAnswer;');
 	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl'], 'score' => $score, 'message' => $message]);
 	$token = '';
-	$oldScore = getPreviousBestScore($params);
 	if ($score == 100 && $oldScore < 100) {
 		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :itemUrl;');
 		$stmt->execute(['idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl']]);
@@ -141,7 +141,7 @@ function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
 
 function sendLISResult($userId, $score) {
 	global $db;
-	$stmt = $db->prepare('select lti_user.user_id, api_users.lti_consumer_key, lti_context.lti_resource_id, lti_user.lti_result_sourcedid from lti_context join api_users on api_users.lti_consumer_key = lti_context.consumer_key and api_users.lti_context_id = lti_context.lti_context_id join lti_user on api_users.lti_consumer_key = lti_user.consumer_key and api_users.lti_user_id = lti_user.user_id and lti_user.context_id = lti_context.context_id where api_users.ID = :idUser;');
+	$stmt = $db->prepare('select lti_user.user_id, api_users.lti_consumer_key, api_users.lti_context_id, lti_user.lti_result_sourcedid from  api_users join lti_user on api_users.lti_consumer_key = lti_user.consumer_key and api_users.lti_user_id = lti_user.user_id and lti_user.context_id = api_users.lti_context_id where api_users.ID = :idUser;');
 	$stmt->execute(['idUser' => $userId]);
 	$LISInfos = $stmt->fetch();
 	if (!$LISInfos) {
@@ -149,12 +149,16 @@ function sendLISResult($userId, $score) {
 	}
 	$dbConn = LTI_Data_Connector::getDataConnector($db, 'PDO');
 	$consumer = new LTI_Tool_Consumer($LISInfos['lti_consumer_key'], $dbConn);
-	$resourceLink = new LTI_Resource_Link($consumer,$LISInfos['lti_resource_id']);
+	$resourceLink = new LTI_Resource_Link($consumer,$LISInfos['lti_context_id']);
 	$outcome = new LTI_Outcome();
 	$scoreOnOne = $score / 100;
 	$outcome->setValue($scoreOnOne);
 	$user = new LTI_User($resourceLink, $LISInfos['user_id']);
 	$ok = $resourceLink->doOutcomesService(LTI_Resource_Link::EXT_WRITE, $outcome, $user);
+	if (!$ok) {
+		error_log('something went wrong when sending results! idUser: '.json_encode($userId).' score: '.$score);
+	}
+	//file_put_contents(__DIR__.'/../logs/lis-answers.txt', "\nlis return for user id ".$userId." with score ".$score.":\n".$resourceLink->ext_response."\n\n".$resourceLink->ext_response_headers."\n", FILE_APPEND);
 }
 
 function getAnswerToken($token, $taskPlatformName, $answer) {
