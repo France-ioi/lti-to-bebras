@@ -27,8 +27,10 @@ function getUserTask($taskId, $userId) {
 	}
 }
 
-function generateToken($userId, $userTask, $platformData, $taskUrl, $user=null) {
+function generateToken($userId, $userTask, $platformData, $taskUrl, $taskPlatformName, $user=null) {
+	global $config;
 	$tokenGenerator = new TokenGenerator($platformData['private_key'], $platformData['name'], null);
+	$returnUrl = $config->baseUrl . '/api-entry.php?taskPlatformName='.$taskPlatformName;
 	$params = [
 		'bAccessSolutions' => $userTask['bAccessSolution'],
 		'bSubmissionPossible' => true,
@@ -40,6 +42,7 @@ function generateToken($userId, $userTask, $platformData, $taskUrl, $user=null) 
 		'idUser' => $userId,
 		'bIsAdmin' => false,
 		'bIsDefault' => false,
+		'returnUrl' => $returnUrl,
 		'sSupportedLangProg' => '*',
 		'sLogin' => ''
 	];

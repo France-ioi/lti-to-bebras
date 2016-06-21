@@ -42,6 +42,7 @@ function getTaskTokenParams($taskPlatformName, $token) {
 	} catch (Exception $e) {
 		die(json_encode(['success' => false, 'error' => 'cannot verify token: '.$e->getMessage()]));
 	}
+	$params['taskPlatformName'] = $taskPlatformName;
 	return $params;
 }
 
@@ -79,7 +80,7 @@ function askHint($hintToken, $taskPlatformName) {
 		die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));
 	}
 	$userTask = getUserTask($params['itemUrl'], $params['idUser']);
-	$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl']);
+	$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl'], $taskPlatformName);
 	echo json_encode(['success' => true, 'token' => $token]);
 }
 
@@ -105,7 +106,7 @@ function graderReturnNoToken($score,$message,$sAnswer,$sToken,$platformName) {
 			die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));
 		}
 		$userTask = getUserTask($params['itemUrl'], $params['idUser']);
-		$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl']);
+		$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl'], $taskPlatformName);
 	}
 	$maxScore = max($score, $oldScore);
 	sendLISResult($params['idUser'], $maxScore);
@@ -120,8 +121,16 @@ function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
 		die(json_encode(['success' => false, 'error' => 'no "score" or "sAnswer" field in hint token']));
 	}
 	$oldScore = getPreviousBestScore($params);
-	$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where idUser = :idUser and sTaskTextId = :itemUrl and sAnswer = :sAnswer;');
-	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl'], 'score' => $score, 'message' => $message]);
+	$stmt = $db->prepare('select ID from api_submissions where idUser = :idUser and sTaskTextId = :itemUrl and sAnswer = :sAnswer;');
+	$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl']]);
+	$submissionID = $stmt->fetchColumn();
+	if ($submissionID) {
+		$stmt = $db->prepare('update api_submissions set score = :score, message = :message, state = \'evaluated\', sDate = NOW() where ID = :ID;');
+		$stmt->execute(['score' => $score, 'message' => $message, 'ID' => $submissionID]);
+	} else {
+		$stmt = $db->prepare('insert into api_submissions (idUser, sTaskTextId, sAnswer, score, message, state, sDate) values (:idUser, :itemUrl, :sAnswer, :score, :message, \'evaluated\', NOW());');
+		$stmt->execute(['sAnswer' => $params['sAnswer'], 'idUser' => $params['idUser'], 'itemUrl' => $params['itemUrl'], 'score' => $score, 'message' => $message]);
+	}
 	$token = '';
 	if ($score == 100 && $oldScore < 100) {
 		$stmt = $db->prepare('update api_users_tasks set bAccessSolution = 1 where idUser = :idUser and sTaskTextId = :itemUrl;');
@@ -131,7 +140,7 @@ function graderReturn($score,$message,$scoreToken,$taskPlatformName) {
 			die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));
 		}
 		$userTask = getUserTask($params['itemUrl'], $params['idUser']);
-		$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl']);
+		$token = generateToken($params['idUser'], $userTask, $platformData, $params['itemUrl'], $taskPlatformName);
 	}
 	$maxScore = max($score, $oldScore);
 	//sendLISResult($params['idUser'], $maxScore);
@@ -235,4 +244,7 @@ elseif ($_POST['action'] == 'graderReturnNoToken') {
 	}
 	$message = isset($_POST['message']) ? $_POST['message'] : '';
 	graderReturnNoToken(intval($_POST['score']), $message, $_POST['sAnswer'], $_POST['sToken'], $_POST['platformName']);
+}
+else {
+	die(json_encode(['success' => false, 'error' => 'missing or unknown action']));
 }
