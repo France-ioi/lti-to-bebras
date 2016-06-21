@@ -123,7 +123,7 @@ function handleLtiResources($user) {
 	global $taskUrl, $db;
 	$userId = saveUser($user);
 	if (!$userId) {
-		die('impossible d\'enegistrer l\'utilisateur');
+		die('Une erreur est survenue, merci de recharger la page (ERR01)');
 	}
 	$userTask = getUserTask($taskUrl, $userId);
 	$platformData = getApiPlatform($user->getResourceLink()->getKey());
