@@ -134,7 +134,7 @@ function handleLtiResources($user) {
 	if (!$taskPlatform) {
 		die('impossible de trouver la platforme d\'exercices');
 	}
-	$token = generateToken($userId, $userTask, $platformData, $taskUrl, $user);
+	$token = generateToken($userId, $userTask, $platformData, $taskUrl, $taskPlatform['name'], $user);
 	if (!$token) {
 		die('impossible de générer le token');
 	}
@@ -162,7 +162,7 @@ function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTok
 	$state = ($userTask && isset($userTask['sState'])) ? $userTask['sState'] : '';
 	$state = $state ? $state : '';
 	$lastAnswer = $lastAnswer ? : '';
-	$returnUrl = $config->baseUrl . '/api-entry.php'.'?taskPlatformName='.$taskPlatformName;
+	$returnUrl = $config->baseUrl . '/api-entry.php?taskPlatformName='.$taskPlatformName;
 ?>
 
 <!DOCTYPE html>
