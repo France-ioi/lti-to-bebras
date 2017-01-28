@@ -162,10 +162,10 @@ function platformLoad(task,platform,metaData) {
             }
          });
       });
-      task.reloadAnswer(lastAnswer, function() {});
       if (lastState) {
          task.reloadState(lastState, function() {});
       }
+      task.reloadAnswer(lastAnswer, function() {});
    });
 }
 
