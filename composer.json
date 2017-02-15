@@ -1,6 +1,6 @@
 {
     "name": "france-ioi/lti-to-bebras",
-    "description": "LTI to Bebras API wrapper",
+    "description": "LTI to Bebras API Wrapper",
     "license": "MIT",
     "repositories": [{
        "type": "vcs",
