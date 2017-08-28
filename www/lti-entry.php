@@ -15,23 +15,40 @@ if (!$taskUrl) {
 
 $themeName = isset($_GET['theme']) ? $_GET['theme'] : 'default';
 
+$sLanguage = isset($_GET['sLanguage']) ? $_GET['sLanguage'] : 'fr';
 $viewNames = [
-	  'task' => 'Exercice',
-    'editor' => 'Résoudre',
-    'hints' => 'Conseils',
-    'solution' => 'Solution',
+    'fr' => [
+        'task' => 'Exercice',
+        'editor' => 'Résoudre',
+        'hints' => 'Conseils',
+        'solution' => 'Solution',
+        ],
+    'en' => [
+        'task' => 'Task',
+        'editor' => 'Solve',
+        'hints' => 'Hints',
+        'solution' => 'Solution',
+        ]
 ];
 $viewOrder = ['task', 'hints', 'editor', 'solution'];
 $themeCss = '';
 $themeButtonsPosition = 'top';
 
 if ($themeName == 'funtelecom') {
-	$viewNames = [
-		'task' => 'Consignes',
-	    'solution' => 'Solution',
-	    'editor' => 'À vous de jouer',
-	    'hints' => 'Indices'
-	];	
+    $viewNames = [
+        'fr' => [
+            'task' => 'Consignes',
+            'solution' => 'Solution',
+            'editor' => 'À vous de jouer',
+            'hints' => 'Indices'
+            ],
+        'en' => [
+            'task' => 'Directives',
+            'solution' => 'Solution',
+            'editor' => 'Your turn',
+            'hints' => 'Hints'
+            ]
+    ];
 	$themeCss = "#choose-view-top {
 	display:flex;
     width: 800px;
@@ -86,6 +103,12 @@ if ($themeName == 'funtelecom') {
 }
 ";
 	$themeButtonsPosition = 'topbottom';
+}
+
+if(isset($viewNames[$sLanguage])) {
+    $viewNames = $viewNames[$sLanguage];
+} else {
+    $viewNames = $viewNames['fr'];
 }
 
 function saveUser($user) {
@@ -195,7 +218,7 @@ function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTok
   </head>
   <body>
     <div id="choose-view-top"></div>
-    <iframe style="width:800px;height:800px;" id="taskIframe" src="<?= $taskUrl . (strpos($taskUrl, '?') === false ? '?' : '&') ?>sToken=<?= $token ?>&sPlatform=<?= $platformName ?>&channelId=<?= $taskPlatformName; ?>"></iframe>
+    <iframe style="width:800px;height:800px;" id="taskIframe" src="<?= $taskUrl . (strpos($taskUrl, '?') === false ? '?' : '&') ?>sToken=<?= $token ?>&sPlatform=<?= $platformName ?>&channelId=<?= $taskPlatformName ?>&sLanguage=<?= $sLanguage ?>"></iframe>
     <div id="choose-view-bottom"></div>
   </body>
 </html>
