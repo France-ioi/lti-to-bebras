@@ -15,7 +15,7 @@ if (!$taskUrl) {
 
 $themeName = isset($_GET['theme']) ? $_GET['theme'] : 'default';
 
-$sLanguage = isset($_GET['sLanguage']) ? $_GET['sLanguage'] : 'fr';
+$sLocale = isset($_GET['sLocale']) ? $_GET['sLocale'] : '';
 $viewNames = [
     'fr' => [
         'task' => 'Exercice',
@@ -51,13 +51,13 @@ if ($themeName == 'funtelecom') {
     ];
 	$themeCss = "#choose-view-top {
 	display:flex;
-    width: 800px;
+    width: 100%;
     margin-top: 10px;
     margin-bottom: 10px;
 }
 #choose-view-bottom {
 	display:flex;
-	width: 800px;
+	width: 100%;
 	margin-top: 10px;
     margin-bottom: 10px;
 }
@@ -143,7 +143,7 @@ function saveUser($user) {
 }
 
 function handleLtiResources($user) {
-	global $taskUrl, $db;
+	global $taskUrl, $db, $sLocale;
 	$userId = saveUser($user);
 	if (!$userId) {
 		die('Une erreur est survenue, merci de recharger la page (ERR01)');
@@ -164,7 +164,7 @@ function handleLtiResources($user) {
 	$stmt = $db->prepare('select sAnswer from api_submissions where idUser = :idUser and sTaskTextId = :idTask order by sDate desc limit 1;');
 	$stmt->execute(['idUser' => $userId, 'idTask' => $taskUrl]);
 	$lastAnswer = $stmt->fetchColumn();
-	printPage($token, $taskUrl, $platformData['name'], $taskPlatform['name'], $taskPlatform['bUsesTokens'], $userTask, $lastAnswer);
+	printPage($token, $taskUrl, $platformData['name'], $taskPlatform['name'], $sLocale, $taskPlatform['bUsesTokens'], $userTask, $lastAnswer);
 }
 
 // actual lti handling:
@@ -180,11 +180,15 @@ $tool->execute();
 
 // TODO: getLastAnswer, getLastState, synchronise state
 
-function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTokens, $userTask, $lastAnswer) {
+function printPage($token, $taskUrl, $platformName, $taskPlatformName, $sLocale, $bUsesTokens, $userTask, $lastAnswer) {
 	global $config, $viewNames, $themeCss, $themeButtonsPosition, $viewOrder;
 	$state = ($userTask && isset($userTask['sState'])) ? $userTask['sState'] : '';
 	$state = $state ? $state : '';
 	$lastAnswer = $lastAnswer ? : '';
+    $containedUrl = $taskUrl . (strpos($taskUrl, '?') === false ? '?' : '&') . 'sToken=' . $token . '&sPlatform=' . $platformName . '&channelId=' . $taskPlatformName;
+    if($sLocale) {
+       $containedUrl .= '&sLocale' = $sLocale;
+    }
 	$returnUrl = $config->baseUrl . '/api-entry.php?taskPlatformName='.$taskPlatformName;
 ?>
 
@@ -218,7 +222,7 @@ function printPage($token, $taskUrl, $platformName, $taskPlatformName, $bUsesTok
   </head>
   <body>
     <div id="choose-view-top"></div>
-    <iframe style="width:800px;height:800px;" id="taskIframe" src="<?= $taskUrl . (strpos($taskUrl, '?') === false ? '?' : '&') ?>sToken=<?= $token ?>&sPlatform=<?= $platformName ?>&channelId=<?= $taskPlatformName ?>&sLanguage=<?= $sLanguage ?>"></iframe>
+    <iframe style="width: 100%; height:800px;" id="taskIframe" src="<?= $containedUrl ?>"></iframe>
     <div id="choose-view-bottom"></div>
   </body>
 </html>
