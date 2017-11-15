@@ -105,8 +105,8 @@ if ($themeName == 'funtelecom') {
 	$themeButtonsPosition = 'topbottom';
 }
 
-if(isset($viewNames[$sLocale])) {
-    $viewNames = $viewNames[$sLocale];
+if(isset($viewNames[substr($sLocale, 0, 2)])) {
+    $viewNames = $viewNames[substr($sLocale, 0, 2)];
 } else {
     $viewNames = $viewNames['fr'];
 }
@@ -187,7 +187,7 @@ function printPage($token, $taskUrl, $platformName, $taskPlatformName, $sLocale,
 	$lastAnswer = $lastAnswer ? : '';
     $containedUrl = $taskUrl . (strpos($taskUrl, '?') === false ? '?' : '&') . 'sToken=' . $token . '&sPlatform=' . $platformName . '&channelId=' . $taskPlatformName;
     if($sLocale) {
-       $containedUrl .= '&sLocale' . $sLocale;
+       $containedUrl .= '&sLocale=' . $sLocale;
     }
 	$returnUrl = $config->baseUrl . '/api-entry.php?taskPlatformName='.$taskPlatformName;
 ?>
