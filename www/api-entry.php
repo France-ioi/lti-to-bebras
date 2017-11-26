@@ -73,8 +73,29 @@ function askHint($hintToken, $taskPlatformName) {
 	if (!$params['askedHint']) {
 		die(json_encode(['success' => false, 'error' => 'no "askedHint" field in hint token']));
 	}
-	$stmt = $db->prepare('update api_users_tasks set nbHintsGiven = :askedHint where idUser = :idUser and sTaskTextId = :idTask;');
-	$stmt->execute(['askedHint' => $params['askedHint'], 'idUser' => $params['idUser'], 'idTask' => $params['itemUrl']]);
+
+    // Get the previours hints requested JSON data
+    $stmt = $db->prepare("SELECT sHintsRequested FROM `api_users_tasks` WHERE idUser = :idUser AND sTaskTextId = :idTask;");
+    $stmt->execute(['askedHint' => $params['askedHint'], 'idUser' => $params['idUser'], 'idTask' => $params['itemUrl']]);
+    if($hintsRequested = $stmt->fetchColumn()) {
+        try {
+            $hintsRequested = json_decode($hintsRequested, true);
+            if(!is_array($hintsRequested)) {
+                error_log("Unable to read sHintsRequested from user " . $params['idUser'] . ", item " . $params['itemUrl'] . " (not an array)");
+                $hintsRequested = array();
+            }
+        } catch(Exception $e) {
+            error_log("Unable to read sHintsRequested from user " . $params['idUser'] . ", item " . $params['itemUrl'] . " (invalid JSON)");
+            $hintsRequested = array(); // Should we just fail here?
+        }
+    } else {
+        $hintsRequested = array();
+    }
+    $hintsRequested[] = $params['askedHint'];
+
+	$stmt = $db->prepare('update api_users_tasks set sHintsRequested = :hintsRequested, nbHintsGiven = :nbHints where idUser = :idUser and sTaskTextId = :idTask;');
+	$stmt->execute(['sHintsRequested' => $hintsRequested, 'nbHints' => count($hintsRequested), 'idUser' => $params['idUser'], 'idTask' => $params['itemUrl']]);
+
 	$platformData = getUserPlatformData($params['idUser']);
 	if (!$platformData) {
 		die(json_encode(['success' => false, 'error' => 'impossible to find platform data for user '.$params['idUser']]));

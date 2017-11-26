@@ -36,6 +36,7 @@ function generateToken($userId, $userTask, $platformData, $taskUrl, $taskPlatfor
 		'bSubmissionPossible' => true,
 		'bHintsAllowed' => true,
 		'bHasSolvedTask' => false,
+		'sHintsRequested' => $userTask['sHintsRequested'],
 		'nbHintsGiven' => $userTask['nbHintsGiven'],
 		'bHintPossible' => true,
 		'itemUrl' => $taskUrl,
