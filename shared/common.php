@@ -18,6 +18,7 @@ function getUserTask($taskId, $userId) {
 		return [
 			'idUser' => $userId,
 			'sTaskTextId' => $taskId,
+            'sHintsRequested' => '', 
 			'nbHintsGiven' => 0,
 			'nbSubmissions' => 0,
 			'bAccessSolution' => 0

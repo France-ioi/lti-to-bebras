@@ -148,8 +148,8 @@ function saveUser($user) {
         $stmt->execute(['consumer_key' => $_POST['oauth_consumer_key'], 'value' => $_POST['oauth_nonce']]);
 
         // Replay the OAuth request
-        $url = (isset($_SERVER['HTTPS']) ? "https" : "http") . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '&reload=1';
-        redirectPost($actual_link, $_POST);
+        $url = (isset($_SERVER['HTTPS']) ? "https" : "http") . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        redirectPost($url, $_POST);
         die();
     }
 	$lti_context_id = $user->getResourceLink()->lti_resource_link_id;
