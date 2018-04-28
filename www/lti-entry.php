@@ -111,6 +111,18 @@ if(isset($viewNames[substr($sLocale, 0, 2)])) {
     $viewNames = $viewNames['fr'];
 }
 
+function redirectPost($url, array $data) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+    $response = curl_exec($ch);
+    die($response);
+}
+
 function saveUser($user) {
 	global $db;
   //var_dump($user);
@@ -121,6 +133,25 @@ function saveUser($user) {
 	$lastName = '';
 	$email = $user->email;
 	$lti_user_id = $user->getId();
+    if(!isset($user->getResourceLink()->lti_resource_link_id)) {
+        // When the link is called for the very first time from edX, it doesn't
+        // work and needs reloading. We simulate the reloading ourselves.
+
+        // We already reloaded once, avoid looping
+        if(isset($_GET['reload']) && $_GET['reload']) {
+            die('Erreur lors de la connexion LTI. Veuillez recharger la page.');
+        }
+
+        // We're replaying the OAuth request, so we need to remove the fact the
+        // nonce was already used
+        $stmt = $db->prepare("DELETE FROM lti_nonce WHERE consumer_key = :consumer_key AND value = :value;");
+        $stmt->execute(['consumer_key' => $_POST['oauth_consumer_key'], 'value' => $_POST['oauth_nonce']]);
+
+        // Replay the OAuth request
+        $url = (isset($_SERVER['HTTPS']) ? "https" : "http") . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '&reload=1';
+        redirectPost($actual_link, $_POST);
+        die();
+    }
 	$lti_context_id = $user->getResourceLink()->lti_resource_link_id;
 	$lti_consumer_key = $user->getResourceLink()->getConsumer()->getKey();
 	// TODO: update name if different?
