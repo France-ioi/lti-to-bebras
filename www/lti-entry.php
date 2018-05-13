@@ -43,7 +43,7 @@ if ($themeName == 'funtelecom') {
             'hints' => 'Indices'
             ],
         'en' => [
-            'task' => 'Directives',
+            'task' => 'Problem statement',
             'solution' => 'Solution',
             'editor' => 'Your turn',
             'hints' => 'Hints'

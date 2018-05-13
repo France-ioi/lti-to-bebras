@@ -76,7 +76,7 @@ function askHint($hintToken, $taskPlatformName) {
 
     // Get the previours hints requested JSON data
     $stmt = $db->prepare("SELECT sHintsRequested FROM `api_users_tasks` WHERE idUser = :idUser AND sTaskTextId = :idTask;");
-    $stmt->execute(['askedHint' => $params['askedHint'], 'idUser' => $params['idUser'], 'idTask' => $params['itemUrl']]);
+    $stmt->execute(['idUser' => $params['idUser'], 'idTask' => $params['itemUrl']]);
     if($hintsRequested = $stmt->fetchColumn()) {
         try {
             $hintsRequested = json_decode($hintsRequested, true);
@@ -94,7 +94,7 @@ function askHint($hintToken, $taskPlatformName) {
     $hintsRequested[] = $params['askedHint'];
 
 	$stmt = $db->prepare('update api_users_tasks set sHintsRequested = :hintsRequested, nbHintsGiven = :nbHints where idUser = :idUser and sTaskTextId = :idTask;');
-	$stmt->execute(['sHintsRequested' => $hintsRequested, 'nbHints' => count($hintsRequested), 'idUser' => $params['idUser'], 'idTask' => $params['itemUrl']]);
+	$stmt->execute(['hintsRequested' => json_encode($hintsRequested), 'nbHints' => count($hintsRequested), 'idUser' => $params['idUser'], 'idTask' => $params['itemUrl']]);
 
 	$platformData = getUserPlatformData($params['idUser']);
 	if (!$platformData) {
@@ -188,7 +188,7 @@ function sendLISResult($userId, $score) {
 	if (!$ok) {
 		error_log('something went wrong when sending results! idUser: '.json_encode($userId).' score: '.$score);
 	}
-	//file_put_contents(__DIR__.'/../logs/lis-answers.txt', "\nlis return for user id ".$userId." with score ".$score.":\n".$resourceLink->ext_response."\n\n".$resourceLink->ext_response_headers."\n", FILE_APPEND);
+	file_put_contents(__DIR__.'/../logs/lis-answers.txt', "\nlis return for user id ".$userId." with score ".$score.":\n".$resourceLink->ext_response."\n\n".$resourceLink->ext_response_headers."\n", FILE_APPEND);
 }
 
 function getAnswerToken($token, $taskPlatformName, $answer) {
