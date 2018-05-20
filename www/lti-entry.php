@@ -49,17 +49,24 @@ if ($themeName == 'funtelecom') {
             'hints' => 'Hints'
             ]
     ];
-	$themeCss = "#choose-view-top {
-	display:flex;
+	$themeCss = "
+body {
+    padding-top: 44px;
+}
+#choose-view-top {
+	display: flex;
     width: 100%;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    padding-top: 10px;
+    background-color: white;
 }
 #choose-view-bottom {
-	display:flex;
+	display: none;
 	width: 100%;
-	margin-top: 10px;
-    margin-bottom: 10px;
+	padding-top: 10px;
+    padding-bottom: 10px;
 }
 .btn-info {
   border-bottom: 3px solid #2aa3ff !important;
