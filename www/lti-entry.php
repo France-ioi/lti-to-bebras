@@ -51,7 +51,7 @@ if ($themeName == 'funtelecom') {
     ];
 	$themeCss = "
 body {
-    padding-top: 44px;
+    padding-top: 30px;
 }
 #choose-view-top {
 	display: flex;
@@ -59,7 +59,6 @@ body {
     position: fixed;
     top: 0px;
     left: 0px;
-    padding-top: 10px;
     background-color: white;
 }
 #choose-view-bottom {
@@ -85,7 +84,6 @@ body {
   flex: 1 0 auto;
   border: 0px;
   border-bottom: 1px solid grey;
-  margin-top: 10px;
   height: 40px;
   vertical-align: middle;
   font-size: 14pt;
