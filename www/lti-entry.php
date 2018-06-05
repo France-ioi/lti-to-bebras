@@ -60,6 +60,10 @@ body {
     top: 0px;
     left: 0px;
     background-color: white;
+    z-index: 9999;
+}
+iframe {
+    position: relative;
 }
 #choose-view-bottom {
 	display: none;
