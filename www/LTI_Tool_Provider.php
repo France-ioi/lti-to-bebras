@@ -3362,6 +3362,11 @@ class LTI_HTTP_Message {
   public $error = '';
 
 /**
+ * @var ssl_version SSL version to use
+ */
+  public $ssl_version = CURL_SSLVERSION_TLSv1_2;
+
+/**
  * @var url Request URL.
  */
   private $url = NULL;
@@ -3423,7 +3428,7 @@ class LTI_HTTP_Message {
       curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
       curl_setopt($ch, CURLINFO_HEADER_OUT, TRUE);
       curl_setopt($ch, CURLOPT_HEADER, TRUE);
-      curl_setopt($ch, CURLOPT_SSLVERSION,4);
+      curl_setopt($ch, CURLOPT_SSLVERSION, $this->ssl_version);
       $ch_resp = curl_exec($ch);
       $ok = $ch_resp !== FALSE;
       if ($ok) {
