@@ -45,7 +45,7 @@ if ($themeName == 'funtelecom') {
         'en' => [
             'task' => 'Problem statement',
             'solution' => 'Solution',
-            'editor' => 'Your turn',
+            'editor' => 'Submission',
             'hints' => 'Hints'
             ]
     ];
