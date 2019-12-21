@@ -13,12 +13,12 @@ function getUserTask($taskId, $userId) {
 	$stmt->execute(['idUser' => $userId, 'idTask' => $taskId]);
 	$userTask = $stmt->fetch();
 	if (!$userTask) {
-		$stmt = $db->prepare('insert into api_users_tasks (idUser, sTaskTextId, nbHintsGiven, nbSubmissions, bAccessSolution) values (:idUser, :idTask, 0, 0, 0);');
+		$stmt = $db->prepare('insert ignore into api_users_tasks (idUser, sTaskTextId, nbHintsGiven, nbSubmissions, bAccessSolution) values (:idUser, :idTask, 0, 0, 0);');
 		$stmt->execute(['idUser' => $userId, 'idTask' => $taskId]);
 		return [
 			'idUser' => $userId,
 			'sTaskTextId' => $taskId,
-            'sHintsRequested' => '', 
+			'sHintsRequested' => '', 
 			'nbHintsGiven' => 0,
 			'nbSubmissions' => 0,
 			'bAccessSolution' => 0
@@ -46,7 +46,8 @@ function generateToken($userId, $userTask, $platformData, $taskUrl, $taskPlatfor
 		'bIsDefault' => false,
 		'returnUrl' => $returnUrl,
 		'sSupportedLangProg' => '*',
-		'sLogin' => ''
+		'sLogin' => '',
+		'randomSeed' => 0
 	];
 	if ($user) {
 		$params['loginData'] = [
