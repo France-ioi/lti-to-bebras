@@ -141,8 +141,10 @@ function platformLoad(task,platform,metaData) {
 	   if (mode == 'cancel') {
 	      task.reloadAnswer('', success, error);
 	      return;
+       } else if(mode == 'nextImmediate') {
+          window.close();
 	   } else {
-      	gradeCurrentAnswer(success,error);
+          gradeCurrentAnswer(success,error);
 	   }
 	};
 

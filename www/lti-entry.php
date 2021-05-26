@@ -112,6 +112,12 @@ iframe {
 }
 ";
 	$themeButtonsPosition = 'topbottom';
+} else {
+    $themeCss = "
+#choose-view-top button:only-child {
+    display: none;
+}
+";
 }
 
 if(isset($viewNames[substr($sLocale, 0, 2)])) {
