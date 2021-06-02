@@ -230,7 +230,15 @@ function printPage($token, $taskUrl, $platformName, $taskPlatformName, $sLocale,
 	global $config, $viewNames, $themeCss, $themeButtonsPosition, $viewOrder;
 	$state = ($userTask && isset($userTask['sState'])) ? $userTask['sState'] : '';
 	$state = $state ? $state : '';
-	$lastAnswer = $lastAnswer ? : '';
+
+    if(!$lastAnswer) {
+        $lastAnswer = '';
+        try {
+            $lastAnswer = json_encode(json_decode($state, true)['levelAnswers']);
+        } catch(Exception $e) {}
+        $lastAnswer = $lastAnswer ? $lastAnswer : '';
+    }
+
     $containedUrl = $taskUrl . (strpos($taskUrl, '?') === false ? '?' : '&') . 'sToken=' . $token . '&sPlatform=' . $platformName . '&channelId=' . $taskPlatformName;
     if($sLocale) {
        $containedUrl .= '&sLocale=' . $sLocale;
