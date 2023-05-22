@@ -58,7 +58,7 @@ function platformLoad(task,platform,metaData) {
    };
 
 	platform.getTaskParams = function(key, defaultValue, success, error) {
-      var res = {'minScore': 0, 'maxScore': 100, 'noScore': 0, 'readOnly': false, 'randomSeed': 0, 'options': {}, returnUrl: returnUrl};
+      var res = {'minScore': 0, 'maxScore': 100, 'noScore': 0, 'readOnly': false, 'randomSeed': 0, 'supportsTabs': true, 'options': {}, returnUrl: returnUrl};
       if (key) {
          if (key !== 'options' && key in res) {
             res = res[key];
